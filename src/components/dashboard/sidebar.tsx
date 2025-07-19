@@ -19,26 +19,24 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {
   LayoutDashboard,
-  Users,
   BarChart3,
   Settings,
   FileText,
-  Calendar,
   Bell,
   Menu,
   LogOut,
   User,
   Search,
   Plus,
+  Film,
+  Bookmark,
 } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Users", href: "/dashboard/users", icon: Users },
-  { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { name: "Reports", href: "/dashboard/reports", icon: FileText },
-  { name: "Calendar", href: "/dashboard/calendar", icon: Calendar },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { name: "Flick Search", href: "/dashboard/flick-search", icon: Film },
+  { name: "My Saved Flicks", href: "/dashboard/reports", icon: Bookmark },
+  { name: "Profile", href: "/dashboard/settings", icon: User },
 ]
 
 export function Sidebar() {

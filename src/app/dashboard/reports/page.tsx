@@ -1,245 +1,302 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Download, FileText, Calendar, Filter, Search } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { 
+  Plus, 
+  Folder, 
+  Film, 
+  MoreHorizontal, 
+  Eye,
+  Lock,
+  Archive,
+  Calendar,
+  User
+} from "lucide-react"
 
-const reportTemplates = [
+// Sample saved flicks data
+const savedFlicks = [
   {
     id: "1",
-    name: "Monthly Sales Report",
-    description: "Comprehensive sales analysis for the current month",
-    category: "Sales",
-    lastGenerated: "2024-01-15",
-    status: "available",
+    title: "Action Movies",
+    count: 24,
+    lastUpdated: "2d",
+    coverImages: [
+      "https://image.tmdb.org/t/p/w200/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
+      "https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
+      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
+    ],
+    isSecret: false
   },
   {
     id: "2",
-    name: "User Activity Report",
-    description: "Detailed user engagement and activity metrics",
-    category: "Users",
-    lastGenerated: "2024-01-14",
-    status: "available",
+    title: "Sci-Fi Classics",
+    count: 18,
+    lastUpdated: "1w",
+    coverImages: [
+      "https://image.tmdb.org/t/p/w200/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg",
+      "https://image.tmdb.org/t/p/w200/2l05cFWJacyIsTpsqSgH0wQXe4V.jpg",
+      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
+      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
+    ],
+    isSecret: true
   },
   {
     id: "3",
-    name: "Revenue Analysis",
-    description: "Revenue breakdown by product and region",
-    category: "Finance",
-    lastGenerated: "2024-01-13",
-    status: "generating",
+    title: "Comedy Favorites",
+    count: 32,
+    lastUpdated: "3d",
+    coverImages: [
+      "https://image.tmdb.org/t/p/w200/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
+      "https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
+      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
+    ],
+    isSecret: false
   },
   {
     id: "4",
-    name: "Performance Metrics",
-    description: "System performance and uptime statistics",
-    category: "Technical",
-    lastGenerated: "2024-01-12",
-    status: "available",
+    title: "Horror Collection",
+    count: 15,
+    lastUpdated: "5d",
+    coverImages: [
+      "https://image.tmdb.org/t/p/w200/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg",
+      "https://image.tmdb.org/t/p/w200/2l05cFWJacyIsTpsqSgH0wQXe4V.jpg",
+      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
+      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
+    ],
+    isSecret: false
   },
+  {
+    id: "5",
+    title: "Drama Masterpieces",
+    count: 28,
+    lastUpdated: "1w",
+    coverImages: [
+      "https://image.tmdb.org/t/p/w200/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
+      "https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
+      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
+    ],
+    isSecret: false
+  },
+  {
+    id: "6",
+    title: "Animated Films",
+    count: 12,
+    lastUpdated: "4d",
+    coverImages: [
+      "https://image.tmdb.org/t/p/w200/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg",
+      "https://image.tmdb.org/t/p/w200/2l05cFWJacyIsTpsqSgH0wQXe4V.jpg",
+      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
+      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
+    ],
+    isSecret: false
+  },
+  {
+    id: "7",
+    title: "Documentaries",
+    count: 8,
+    lastUpdated: "2w",
+    coverImages: [
+      "https://image.tmdb.org/t/p/w200/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
+      "https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
+      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
+    ],
+    isSecret: true
+  },
+  {
+    id: "8",
+    title: "Foreign Films",
+    count: 21,
+    lastUpdated: "1d",
+    coverImages: [
+      "https://image.tmdb.org/t/p/w200/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg",
+      "https://image.tmdb.org/t/p/w200/2l05cFWJacyIsTpsqSgH0wQXe4V.jpg",
+      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
+      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
+    ],
+    isSecret: false
+  },
+  {
+    id: "9",
+    title: "Romance Classics",
+    count: 16,
+    lastUpdated: "6d",
+    coverImages: [
+      "https://image.tmdb.org/t/p/w200/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
+      "https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
+      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
+    ],
+    isSecret: false
+  },
+  {
+    id: "10",
+    title: "Thriller Collection",
+    count: 19,
+    lastUpdated: "3d",
+    coverImages: [
+      "https://image.tmdb.org/t/p/w200/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg",
+      "https://image.tmdb.org/t/p/w200/2l05cFWJacyIsTpsqSgH0wQXe4V.jpg",
+      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
+      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
+    ],
+    isSecret: false
+  }
 ]
 
-const recentReports = [
-  {
-    id: "1",
-    name: "Monthly Sales Report - January 2024",
-    type: "PDF",
-    size: "2.4 MB",
-    generatedAt: "2024-01-15 10:30 AM",
-    status: "completed",
-  },
-  {
-    id: "2",
-    name: "User Activity Report - January 2024",
-    type: "Excel",
-    size: "1.8 MB",
-    generatedAt: "2024-01-14 02:15 PM",
-    status: "completed",
-  },
-  {
-    id: "3",
-    name: "Revenue Analysis - Q4 2023",
-    type: "PDF",
-    size: "3.2 MB",
-    generatedAt: "2024-01-13 09:45 AM",
-    status: "completed",
-  },
-]
+// Carousel component for each folder
+function FolderCarousel({ images, isSecret }: { images: string[], isSecret: boolean }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
-export default function ReportsPage() {
+  useEffect(() => {
+    if (!isHovered || images.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+    }, 500); // Change image every half second
+
+    return () => clearInterval(interval);
+  }, [isHovered, images.length]);
+
+  const handleMouseEnter = () => setIsHovered(true);
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setCurrentIndex(0); // Reset to first image when leaving
+  };
+
+  return (
+    <div 
+      className="relative w-32 h-48 rounded-lg overflow-hidden"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Current poster */}
+      <img
+        src={images[currentIndex]}
+        alt={`Cover ${currentIndex + 1}`}
+        className="w-full h-full object-cover transition-opacity duration-500"
+      />
+      
+      {/* Secret badge */}
+      {isSecret && (
+        <div className="absolute top-2 right-2">
+          <Badge variant="secondary" className="bg-black/70 text-white">
+            <Lock className="h-3 w-3 mr-1" />
+            Secret
+          </Badge>
+        </div>
+      )}
+      
+      {/* More options button */}
+      <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button size="sm" variant="secondary" className="h-8 w-8 p-0 bg-white/90 hover:bg-white">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Carousel dots */}
+      {images.length > 1 && (
+        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1">
+          {images.map((_, index) => (
+            <div
+              key={index}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                index === currentIndex 
+                  ? 'bg-white shadow-sm' 
+                  : 'bg-white/50 hover:bg-white/75'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function MySavedFlicksPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
         {/* Page header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
-            <p className="text-muted-foreground">
-              Generate and manage your business reports.
-            </p>
+            <h1 className="text-3xl font-bold tracking-tight">Your saved flicks</h1>
           </div>
-          <Button>
-            <FileText className="h-4 w-4 mr-2" />
-            Create Report
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button className="bg-black hover:bg-black/90">
+              <Plus className="h-4 w-4 mr-2" />
+              Create
+            </Button>
+          </div>
         </div>
 
-        {/* Report generation form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Generate New Report</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="report-type">Report Type</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select report type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sales">Sales Report</SelectItem>
-                    <SelectItem value="users">User Activity Report</SelectItem>
-                    <SelectItem value="revenue">Revenue Analysis</SelectItem>
-                    <SelectItem value="performance">Performance Metrics</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="date-range">Date Range</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select date range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="week">This Week</SelectItem>
-                    <SelectItem value="month">This Month</SelectItem>
-                    <SelectItem value="quarter">This Quarter</SelectItem>
-                    <SelectItem value="year">This Year</SelectItem>
-                    <SelectItem value="custom">Custom Range</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="format">Format</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pdf">PDF</SelectItem>
-                    <SelectItem value="excel">Excel</SelectItem>
-                    <SelectItem value="csv">CSV</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email (optional)</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter email for notification"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Add a description for this report..."
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button variant="outline">Cancel</Button>
-              <Button>
-                <Download className="h-4 w-4 mr-2" />
-                Generate Report
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Navigation tabs and filters */}
+        <div className="flex items-center justify-between">
+          <Tabs defaultValue="boards" className="w-full">
+            <TabsList className="grid w-48 grid-cols-2">
+              <TabsTrigger value="pins">Pins</TabsTrigger>
+              <TabsTrigger value="boards">Boards</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              <Eye className="h-4 w-4 mr-2" />
+              Group
+            </Button>
+            <Button variant="outline" size="sm">
+              <Lock className="h-4 w-4 mr-2" />
+              Secret
+            </Button>
+            <Button variant="outline" size="sm">
+              <Archive className="h-4 w-4 mr-2" />
+              Archived
+            </Button>
+          </div>
+        </div>
 
-        {/* Report templates */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Report Templates</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {reportTemplates.map((template) => (
-                  <div
-                    key={template.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <h4 className="font-medium">{template.name}</h4>
-                        <Badge variant="outline">{template.category}</Badge>
+        {/* Boards grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {savedFlicks.map((flick) => (
+            <Card key={flick.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group p-5">
+              <div className="flex gap-3">
+                {/* First Column: Carousel */}
+                <div className="flex-shrink-0">
+                  <FolderCarousel 
+                    images={flick.coverImages} 
+                    isSecret={flick.isSecret} 
+                  />
+                </div>
+
+                {/* Second Column: Folder Details */}
+                <div className="flex-1">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-lg line-clamp-1">{flick.title}</h3>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Film className="h-4 w-4" />
+                        <span>{flick.count} flicks</span>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {template.description}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Last generated: {template.lastGenerated}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge
-                        variant={
-                          template.status === "available"
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {template.status}
-                      </Badge>
-                      <Button size="sm" variant="outline">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent reports */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Reports</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentReports.map((report) => (
-                  <div
-                    key={report.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <h4 className="font-medium">{report.name}</h4>
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
-                        <span>{report.type}</span>
-                        <span>{report.size}</span>
-                        <span>{report.generatedAt}</span>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>{flick.lastUpdated}</span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="outline">{report.status}</Badge>
-                      <Button size="sm" variant="outline">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
                   </div>
-                ))}
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </Card>
+          ))}
         </div>
       </div>
     </DashboardLayout>
