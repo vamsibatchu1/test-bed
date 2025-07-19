@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Lock, Unlock } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/auth-context";
+import { markFirstLibrary } from "@/lib/progress-tracker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,6 +82,9 @@ export default function MySavedFlicks() {
         });
 
       if (error) throw error;
+      
+      // Mark first library as completed
+      markFirstLibrary();
       
       // Reset form and close dialog
       setNewFolderTitle("");

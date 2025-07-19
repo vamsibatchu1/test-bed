@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { supabase } from "@/lib/supabase";
+import { markFirstSearch, markFirstSave } from "@/lib/progress-tracker";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,6 +73,16 @@ export default function FlickSearchPage() {
   const [creating, setCreating] = useState(false);
   const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(new Set());
   const [existingSaves, setExistingSaves] = useState<Set<string>>(new Set());
+
+  // Check for movie parameter in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const movieParam = urlParams.get('movie');
+    if (movieParam) {
+      setSearchQuery(movieParam);
+      searchMovies(movieParam);
+    }
+  }, []);
 
   // Fetch user's folders
   useEffect(() => {
@@ -167,6 +178,8 @@ export default function FlickSearchPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     searchMovies(searchQuery);
+    // Mark first search as completed
+    markFirstSearch();
   };
 
   const checkExistingSaves = async (movieId: number) => {
@@ -260,6 +273,8 @@ export default function FlickSearchPage() {
             const newExistingSaves = new Set(existingSaves);
             newExistingSaves.add(folderId);
             setExistingSaves(newExistingSaves);
+            // Mark first save as completed
+            markFirstSave();
           }
         } catch (error) {
           console.error('Error saving movie:', error);
@@ -321,6 +336,9 @@ export default function FlickSearchPage() {
       setSelectedMovie(null);
       setSelectedFolderIds(new Set());
       setExistingSaves(new Set());
+      
+      // Mark first save as completed
+      markFirstSave();
       
       // Refresh folders
       await fetchFolders();
