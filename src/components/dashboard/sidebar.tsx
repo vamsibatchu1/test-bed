@@ -31,6 +31,7 @@ import {
   Film,
   Bookmark,
 } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -68,12 +69,17 @@ export function Sidebar() {
 function SidebarContent() {
   const pathname = usePathname()
   const [searchQuery, setSearchQuery] = useState("")
+  const { user, signOut } = useAuth()
+
+  const handleSignOut = async () => {
+    await signOut()
+  }
 
   return (
     <div className="flex flex-col h-full bg-background border-r">
       {/* Logo */}
       <div className="flex h-16 items-center px-4">
-        <h1 className="text-xl font-bold">Test Bed</h1>
+        <h1 className="text-xl font-bold">GoodFlicks</h1>
       </div>
 
       {/* Search bar */}
@@ -117,24 +123,26 @@ function SidebarContent() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="w-full justify-start">
               <div className="flex-1 text-left">
-                <p className="text-sm font-medium">John Doe</p>
-                <p className="text-xs text-muted-foreground">john@example.com</p>
+                <p className="text-sm font-medium">
+                  {user?.user_metadata?.full_name || user?.email || "User"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {user?.email || "user@example.com"}
+                </p>
               </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/settings">
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>

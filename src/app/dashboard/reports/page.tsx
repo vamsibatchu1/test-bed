@@ -1,304 +1,307 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DashboardLayout } from "@/components/dashboard/layout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { 
-  Plus, 
-  Folder, 
-  Film, 
-  MoreHorizontal, 
-  Eye,
-  Lock,
-  Archive,
-  Calendar,
-  User
-} from "lucide-react"
+import { DashboardLayout } from "@/components/dashboard/layout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Lock, Unlock } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/auth-context";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
-// Sample saved flicks data
-const savedFlicks = [
-  {
-    id: "1",
-    title: "Action Movies",
-    count: 24,
-    lastUpdated: "2d",
-    coverImages: [
-      "https://image.tmdb.org/t/p/w200/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
-      "https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
-      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
-      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
-    ],
-    isSecret: false
-  },
-  {
-    id: "2",
-    title: "Sci-Fi Classics",
-    count: 18,
-    lastUpdated: "1w",
-    coverImages: [
-      "https://image.tmdb.org/t/p/w200/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg",
-      "https://image.tmdb.org/t/p/w200/2l05cFWJacyIsTpsqSgH0wQXe4V.jpg",
-      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
-      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
-    ],
-    isSecret: true
-  },
-  {
-    id: "3",
-    title: "Comedy Favorites",
-    count: 32,
-    lastUpdated: "3d",
-    coverImages: [
-      "https://image.tmdb.org/t/p/w200/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
-      "https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
-      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
-      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
-    ],
-    isSecret: false
-  },
-  {
-    id: "4",
-    title: "Horror Collection",
-    count: 15,
-    lastUpdated: "5d",
-    coverImages: [
-      "https://image.tmdb.org/t/p/w200/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg",
-      "https://image.tmdb.org/t/p/w200/2l05cFWJacyIsTpsqSgH0wQXe4V.jpg",
-      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
-      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
-    ],
-    isSecret: false
-  },
-  {
-    id: "5",
-    title: "Drama Masterpieces",
-    count: 28,
-    lastUpdated: "1w",
-    coverImages: [
-      "https://image.tmdb.org/t/p/w200/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
-      "https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
-      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
-      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
-    ],
-    isSecret: false
-  },
-  {
-    id: "6",
-    title: "Animated Films",
-    count: 12,
-    lastUpdated: "4d",
-    coverImages: [
-      "https://image.tmdb.org/t/p/w200/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg",
-      "https://image.tmdb.org/t/p/w200/2l05cFWJacyIsTpsqSgH0wQXe4V.jpg",
-      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
-      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
-    ],
-    isSecret: false
-  },
-  {
-    id: "7",
-    title: "Documentaries",
-    count: 8,
-    lastUpdated: "2w",
-    coverImages: [
-      "https://image.tmdb.org/t/p/w200/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
-      "https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
-      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
-      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
-    ],
-    isSecret: true
-  },
-  {
-    id: "8",
-    title: "Foreign Films",
-    count: 21,
-    lastUpdated: "1d",
-    coverImages: [
-      "https://image.tmdb.org/t/p/w200/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg",
-      "https://image.tmdb.org/t/p/w200/2l05cFWJacyIsTpsqSgH0wQXe4V.jpg",
-      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
-      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
-    ],
-    isSecret: false
-  },
-  {
-    id: "9",
-    title: "Romance Classics",
-    count: 16,
-    lastUpdated: "6d",
-    coverImages: [
-      "https://image.tmdb.org/t/p/w200/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
-      "https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
-      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
-      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
-    ],
-    isSecret: false
-  },
-  {
-    id: "10",
-    title: "Thriller Collection",
-    count: 19,
-    lastUpdated: "3d",
-    coverImages: [
-      "https://image.tmdb.org/t/p/w200/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg",
-      "https://image.tmdb.org/t/p/w200/2l05cFWJacyIsTpsqSgH0wQXe4V.jpg",
-      "https://image.tmdb.org/t/p/w200/9PqD3wSIjntyJDBzMNuxuKHwpUD.jpg",
-      "https://image.tmdb.org/t/p/w200/8Vt6mWEReuy4Of61L8kuCQOqJY5.jpg"
-    ],
-    isSecret: false
-  }
-]
-
-// Carousel component for each folder
-function FolderCarousel({ images, isSecret }: { images: string[], isSecret: boolean }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-
-  useEffect(() => {
-    if (!isHovered || images.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % images.length);
-    }, 500); // Change image every half second
-
-    return () => clearInterval(interval);
-  }, [isHovered, images.length]);
-
-  const handleMouseEnter = () => setIsHovered(true);
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    setCurrentIndex(0); // Reset to first image when leaving
-  };
-
-  return (
-    <div 
-      className="relative w-32 h-48 rounded-lg overflow-hidden"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* Current poster */}
-      <img
-        src={images[currentIndex]}
-        alt={`Cover ${currentIndex + 1}`}
-        className="w-full h-full object-cover transition-opacity duration-500"
-      />
-      
-      {/* Secret badge */}
-      {isSecret && (
-        <div className="absolute top-2 right-2">
-          <Badge variant="secondary" className="bg-black/70 text-white">
-            <Lock className="h-3 w-3 mr-1" />
-            Secret
-          </Badge>
-        </div>
-      )}
-      
-      {/* More options button */}
-      <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button size="sm" variant="secondary" className="h-8 w-8 p-0 bg-white/90 hover:bg-white">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Carousel dots */}
-      {images.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1">
-          {images.map((_, index) => (
-            <div
-              key={index}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                index === currentIndex 
-                  ? 'bg-white shadow-sm' 
-                  : 'bg-white/50 hover:bg-white/75'
-              }`}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+interface Folder {
+  id: string;
+  title: string;
+  is_secret: boolean;
+  created_at: string;
+  saved_movies: SavedMovie[];
 }
 
-export default function MySavedFlicksPage() {
-  return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Page header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Your saved flicks</h1>
+interface SavedMovie {
+  id: string;
+  movie_id: number;
+  movie_title: string;
+  movie_poster: string;
+  movie_overview: string;
+  movie_release_date: string;
+  movie_rating: number;
+}
+
+export default function MySavedFlicks() {
+  const { user } = useAuth();
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newFolderTitle, setNewFolderTitle] = useState("");
+  const [isSecret, setIsSecret] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetchFolders();
+    }
+  }, [user]);
+
+  const fetchFolders = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('folders')
+        .select(`
+          *,
+          saved_movies (*)
+        `)
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setFolders(data || []);
+    } catch (error) {
+      console.error('Error fetching folders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createFolder = async () => {
+    if (!newFolderTitle.trim()) return;
+    
+    try {
+      setCreating(true);
+      const { error } = await supabase
+        .from('folders')
+        .insert({
+          title: newFolderTitle.trim(),
+          is_secret: isSecret,
+          user_id: user?.id,
+        });
+
+      if (error) throw error;
+      
+      // Reset form and close dialog
+      setNewFolderTitle("");
+      setIsSecret(false);
+      setIsCreateDialogOpen(false);
+      
+      // Refresh folders
+      await fetchFolders();
+    } catch (error) {
+      console.error('Error creating folder:', error);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold">My Saved Flicks</h1>
           </div>
-          <div className="flex items-center gap-4">
-            <Button className="bg-black hover:bg-black/90">
-              <Plus className="h-4 w-4 mr-2" />
-              Create
-            </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-32 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
+      </DashboardLayout>
+    );
+  }
 
-        {/* Navigation tabs and filters */}
-        <div className="flex items-center justify-between">
-          <Tabs defaultValue="boards" className="w-full">
-            <TabsList className="grid w-48 grid-cols-2">
-              <TabsTrigger value="pins">Pins</TabsTrigger>
-              <TabsTrigger value="boards">Boards</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Eye className="h-4 w-4 mr-2" />
-              Group
-            </Button>
-            <Button variant="outline" size="sm">
-              <Lock className="h-4 w-4 mr-2" />
-              Secret
-            </Button>
-            <Button variant="outline" size="sm">
-              <Archive className="h-4 w-4 mr-2" />
-              Archived
-            </Button>
-          </div>
-        </div>
-
-        {/* Boards grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {savedFlicks.map((flick) => (
-            <Card key={flick.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group p-5">
-              <div className="flex gap-3">
-                {/* First Column: Carousel */}
-                <div className="flex-shrink-0">
-                  <FolderCarousel 
-                    images={flick.coverImages} 
-                    isSecret={flick.isSecret} 
-                  />
-                </div>
-
-                {/* Second Column: Folder Details */}
-                <div className="flex-1">
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg line-clamp-1">{flick.title}</h3>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Film className="h-4 w-4" />
-                        <span>{flick.count} flicks</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        <span>{flick.lastUpdated}</span>
-                      </div>
-                    </div>
+  if (folders.length === 0) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold">My Saved Flicks</h1>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Folder
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Folder</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Input
+                      id="title"
+                      value={newFolderTitle}
+                      onChange={(e) => setNewFolderTitle(e.target.value)}
+                      placeholder="Enter folder name..."
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="secret"
+                      checked={isSecret}
+                      onCheckedChange={setIsSecret}
+                    />
+                    <Label htmlFor="secret">Secret folder (only you can see)</Label>
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsCreateDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={createFolder}
+                      disabled={creating || !newFolderTitle.trim()}
+                    >
+                      {creating ? "Creating..." : "Create Folder"}
+                    </Button>
                   </div>
                 </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <div className="text-center py-12">
+            <div className="max-w-md mx-auto">
+              <div className="w-24 h-24 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Plus className="w-8 h-8 text-gray-400" />
               </div>
+              <h3 className="text-lg font-semibold mb-2">No folders yet</h3>
+              <p className="text-gray-600 mb-6">
+                Create your first folder to start saving your favorite movies
+              </p>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Your First Folder
+              </Button>
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">My Saved Flicks</h1>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Folder
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Folder</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Folder Name</Label>
+                  <Input
+                    id="title"
+                    value={newFolderTitle}
+                    onChange={(e) => setNewFolderTitle(e.target.value)}
+                    placeholder="Enter folder name..."
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="secret"
+                    checked={isSecret}
+                    onCheckedChange={setIsSecret}
+                  />
+                  <Label htmlFor="secret">Secret folder (only you can see)</Label>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsCreateDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={createFolder}
+                    disabled={creating || !newFolderTitle.trim()}
+                  >
+                    {creating ? "Creating..." : "Create Folder"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {folders.map((folder) => (
+            <Card key={folder.id} className="group hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <CardTitle className="text-lg font-semibold truncate">
+                      {folder.title}
+                    </CardTitle>
+                    <span className="text-sm text-gray-600">
+                      ({folder.saved_movies?.length || 0})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {folder.is_secret ? (
+                      <Lock className="w-4 h-4 text-gray-500" />
+                    ) : (
+                      <Unlock className="w-4 h-4 text-gray-500" />
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex space-x-2 overflow-x-auto pb-2">
+                  {folder.saved_movies && folder.saved_movies.length > 0 ? (
+                    folder.saved_movies.slice(0, 5).map((movie) => (
+                      <div
+                        key={movie.id}
+                        className="flex-shrink-0 w-16 h-24 bg-gray-200 rounded-lg overflow-hidden"
+                      >
+                        {movie.movie_poster ? (
+                          <img
+                            src={movie.movie_poster}
+                            alt={movie.movie_title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                            <span className="text-xs text-gray-500 text-center px-1">
+                              {movie.movie_title}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="w-full h-24 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <span className="text-sm text-gray-500">No movies yet</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
             </Card>
           ))}
         </div>
       </div>
     </DashboardLayout>
-  )
+  );
 } 
