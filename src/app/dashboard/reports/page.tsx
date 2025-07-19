@@ -135,16 +135,15 @@ export default function MySavedFlicks() {
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New Folder</DialogTitle>
-                </DialogHeader>
+                <DialogTitle>Create New Folder</DialogTitle>
                 <div className="space-y-4">
-                  <div>
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Folder Name</Label>
                     <Input
                       id="title"
                       value={newFolderTitle}
                       onChange={(e) => setNewFolderTitle(e.target.value)}
-                      placeholder="Enter folder name..."
+                      className="w-full"
                     />
                   </div>
                   <div className="flex items-center space-x-2">
@@ -210,7 +209,7 @@ export default function MySavedFlicks() {
                 <DialogTitle>Create New Folder</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="title">Folder Name</Label>
                   <Input
                     id="title"
