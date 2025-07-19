@@ -1,25 +1,21 @@
-"use client"
+"use client";
 
-import { Sidebar } from "./sidebar"
-import ProtectedRoute from "@/components/auth/protected-route"
+import { MobileNavigation } from "@/components/mobile-navigation";
 
 interface DashboardLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-background">
-        <Sidebar />
-        <div className="md:pl-64">
-          <main className="flex-1">
-            <div className="container mx-auto p-6">
-              {children}
-            </div>
-          </main>
-        </div>
-      </div>
-    </ProtectedRoute>
-  )
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Main Content Area */}
+      <main className="flex-1 pb-16 max-w-[480px] mx-auto w-full overflow-y-auto scrollbar-hide">
+        {children}
+      </main>
+      
+      {/* Mobile Bottom Navigation */}
+      <MobileNavigation />
+    </div>
+  );
 } 

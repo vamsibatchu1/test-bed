@@ -374,24 +374,21 @@ export default function FlickSearchPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
+      <div className="p-4 bg-neutral-950 min-h-screen overflow-y-auto scrollbar-hide">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-4">Flick Search</h1>
+          <h1 className="text-2xl font-bold mb-4 text-white">Flick Search</h1>
           
           {/* Search Form */}
           <form onSubmit={handleSearch} className="max-w-md">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 h-4 w-4" />
               <Input
                 type="text"
                 placeholder="Search for movies..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-400 focus:border-neutral-600"
               />
-              <Button type="submit" className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8">
-                Search
-              </Button>
             </div>
           </form>
         </div>
@@ -399,25 +396,29 @@ export default function FlickSearchPage() {
         {/* Search Results */}
         {loading && (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Searching movies...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-400 mx-auto"></div>
+            <p className="mt-2 text-neutral-400">Searching movies...</p>
           </div>
         )}
 
         {!loading && movies.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="flex flex-col gap-4">
             {movies.map((movie) => (
-              <Card key={movie.id} className="p-3 hover:shadow-lg transition-shadow group relative">
+              <Card key={movie.id} className="p-3 hover:shadow-lg transition-shadow group relative bg-transparent border-none">
                 {/* 3-dot Menu - positioned at top right of entire card */}
                 <div className="absolute top-2 right-2 z-10">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         size="sm"
-                        variant="secondary"
-                        className="h-8 w-8 p-0 bg-white/90 hover:bg-white border border-gray-200"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 bg-transparent hover:bg-transparent border-none text-neutral-400 hover:text-white"
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <div className="flex flex-col gap-0.5">
+                          <div className="w-1 h-1 bg-current rounded-full"></div>
+                          <div className="w-1 h-1 bg-current rounded-full"></div>
+                          <div className="w-1 h-1 bg-current rounded-full"></div>
+                        </div>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -442,7 +443,7 @@ export default function FlickSearchPage() {
                 <div className="flex gap-3">
                   {/* First Column: Poster */}
                   <div className="flex-shrink-0">
-                    <div className="w-32 h-48 bg-muted relative rounded-lg overflow-hidden">
+                    <div className="w-20 h-32 bg-neutral-800 relative rounded-lg overflow-hidden">
                       {movie.poster_path ? (
                         <img
                           src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
@@ -451,7 +452,7 @@ export default function FlickSearchPage() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-muted-foreground text-xs">No poster</span>
+                          <span className="text-neutral-400 text-xs">No poster</span>
                         </div>
                       )}
                     </div>
@@ -461,11 +462,11 @@ export default function FlickSearchPage() {
                   <div className="flex-1 flex flex-col space-y-2">
                     {/* Row 1: Title */}
                     <div>
-                      <h3 className="font-bold text-lg line-clamp-2">{movie.title}</h3>
+                      <h3 className="font-bold text-base line-clamp-1 text-white">{movie.title}</h3>
                     </div>
 
                     {/* Row 2: Year and Rating */}
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-3 text-xs text-neutral-400">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         <span>{movie.release_date?.split('-')[0] || 'N/A'}</span>
@@ -478,41 +479,34 @@ export default function FlickSearchPage() {
 
                     {/* Row 3: Overview */}
                     <div>
-                      <p className="text-sm text-muted-foreground line-clamp-3">
+                      <p className="text-xs text-neutral-400 line-clamp-2">
                         {movie.overview || "No overview available."}
                       </p>
                     </div>
 
-                    {/* Row 4: IMDb and Rotten Tomatoes Ratings */}
+                    {/* Row 4: IMDb, Rotten Tomatoes, and Awards Ratings */}
                     <div className="flex gap-2">
-                      <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded border">
-                        <Star className="h-3 w-3 text-yellow-600" />
-                        <span className="text-xs font-medium text-yellow-600">IMDb</span>
-                        <span className="text-sm font-bold">
+                      <div className="flex items-center gap-1 bg-neutral-800 px-2 py-1 rounded">
+                        <span className="text-xs font-medium text-white">IMDb</span>
+                        <span className="text-xs font-bold text-white">
                           {movie.omdbData?.imdbRating || "N/A"}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 bg-red-50 px-2 py-1 rounded border">
-                        <span className="text-xs font-medium text-red-600">🍅</span>
-                        <span className="text-xs font-medium text-red-600">RT</span>
-                        <span className="text-sm font-bold">
+                      <div className="flex items-center gap-1 bg-neutral-800 px-2 py-1 rounded">
+                        <span className="text-xs font-medium text-white">Rotten Tomatoes</span>
+                        <span className="text-xs font-bold text-white">
                           {getRatingValue(movie.omdbData?.Ratings || [], "Rotten Tomatoes")}
                         </span>
                       </div>
+                      {movie.omdbData?.Awards && movie.omdbData.Awards !== "N/A" && (
+                        <div className="flex items-center gap-1 bg-neutral-800 px-2 py-1 rounded">
+                          <span className="text-xs font-medium text-white">Awards</span>
+                          <span className="text-xs font-bold text-white">
+                            {getAwardsCount(movie.omdbData.Awards)}
+                          </span>
+                        </div>
+                      )}
                     </div>
-
-                    {/* Row 5: Awards Details */}
-                    {movie.omdbData?.Awards && movie.omdbData.Awards !== "N/A" && (
-                      <div className="flex items-center gap-2">
-                        <Award className="h-3 w-3 text-amber-600" />
-                        <Badge variant="secondary" className="text-xs">
-                          {getAwardsCount(movie.omdbData.Awards)} awards
-                        </Badge>
-                        <span className="text-xs text-muted-foreground line-clamp-1">
-                          {movie.omdbData.Awards}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </Card>
@@ -522,7 +516,7 @@ export default function FlickSearchPage() {
 
                  {!loading && searchQuery && movies.length === 0 && (
            <div className="text-center py-8">
-             <p className="text-gray-600">No movies found for &quot;{searchQuery}&quot;</p>
+             <p className="text-neutral-400">No movies found for &quot;{searchQuery}&quot;</p>
            </div>
          )}
       </div>

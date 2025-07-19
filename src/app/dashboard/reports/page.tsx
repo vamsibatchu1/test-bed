@@ -103,11 +103,11 @@ export default function MySavedFlicks() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="p-6">
+        <div className="p-4 bg-[#F0EFEB] overflow-y-auto scrollbar-hide">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">My Saved Flicks</h1>
+            <h1 className="text-2xl font-bold">My Library</h1>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
@@ -128,14 +128,13 @@ export default function MySavedFlicks() {
   if (folders.length === 0) {
     return (
       <DashboardLayout>
-        <div className="p-6">
+        <div className="p-4 bg-[#F0EFEB] overflow-y-auto scrollbar-hide">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">My Saved Flicks</h1>
+            <h1 className="text-2xl font-bold">My Library</h1>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Folder
+                <Button variant="ghost" className="p-2 h-auto bg-transparent hover:bg-transparent">
+                  <Plus className="w-8 h-8 text-white" />
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -198,16 +197,15 @@ export default function MySavedFlicks() {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">My Saved Flicks</h1>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Folder
-              </Button>
-            </DialogTrigger>
+              <div className="p-4 overflow-y-auto scrollbar-hide">
+                  <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold">My Library</h1>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" className="p-2 h-auto bg-transparent hover:bg-transparent">
+                  <Plus className="w-8 h-8 text-white" />
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New Folder</DialogTitle>
@@ -249,7 +247,7 @@ export default function MySavedFlicks() {
           </Dialog>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {folders.map((folder) => (
             <Card key={folder.id} className="group hover:shadow-lg transition-shadow">
               <CardHeader className="pb-0">

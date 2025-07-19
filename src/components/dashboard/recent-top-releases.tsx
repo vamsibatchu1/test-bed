@@ -90,62 +90,58 @@ export function RecentTopReleases() {
 
   if (loading) {
     return (
-      <Card className="h-fit">
-        <CardHeader>
+      <div className="h-fit">
+        <div className="mb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Recent Top Releases</CardTitle>
+            <h2 className="text-2xl font-bold">Recent Top Releases</h2>
             <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
           <p className="text-muted-foreground text-sm">
             Top-rated movies from the past 3-4 months
           </p>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="flex space-x-3 animate-pulse">
-                <div className="w-16 h-24 bg-gray-200 rounded"></div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex space-x-3 animate-pulse">
+              <div className="w-16 h-24 bg-neutral-700 rounded flex-shrink-0"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-neutral-700 rounded w-3/4"></div>
+                <div className="h-3 bg-neutral-700 rounded w-1/2"></div>
+                <div className="h-3 bg-neutral-700 rounded w-2/3"></div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card className="h-fit">
-        <CardHeader>
-          <CardTitle className="text-lg">Recent Top Releases</CardTitle>
+      <div className="h-fit">
+        <div className="mb-4">
+          <h2 className="text-2xl font-bold">Recent Top Releases</h2>
           <p className="text-muted-foreground text-sm">
             Top-rated movies from the past 3-4 months
           </p>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={fetchMovies} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="text-center py-8">
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={fetchMovies} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="h-fit">
-      <CardHeader>
+    <div className="h-fit">
+      <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg">Recent Top Releases</CardTitle>
+            <h2 className="text-2xl font-bold">Recent Top Releases</h2>
             <p className="text-muted-foreground text-sm">
               Top-rated movies from the past 3-4 months
             </p>
@@ -159,43 +155,51 @@ export function RecentTopReleases() {
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-3 gap-3 max-h-64 overflow-y-auto">
-          {movies.map((movie) => (
+      </div>
+            <div className="grid grid-cols-2 gap-4">
+        {(() => {
+          const moviesWithPosters = movies.filter(movie => movie.poster_path);
+          
+          if (moviesWithPosters.length === 0) {
+            return (
+              <div className="col-span-2 text-center py-8">
+                <p className="text-neutral-400 mb-4">No movies with posters available</p>
+                <Button onClick={fetchMovies} variant="outline">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
+                </Button>
+              </div>
+            );
+          }
+          
+          return moviesWithPosters.slice(0, 4).map((movie) => (
             <div 
               key={movie.id}
-              className="flex flex-col p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              className="flex flex-row space-x-3 p-3 rounded-lg hover:bg-neutral-800 cursor-pointer transition-colors"
               onClick={() => handleMovieClick(movie)}
             >
-              {/* Movie Poster */}
-              <div className="flex justify-start mb-2">
-                {movie.poster_path ? (
-                  <img
-                    src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
-                    alt={movie.title}
-                    className="w-16 h-24 object-cover rounded"
-                  />
-                ) : (
-                  <div className="w-16 h-24 bg-gray-200 rounded flex items-center justify-center">
-                    <span className="text-gray-400 text-xs">No Image</span>
-                  </div>
-                )}
+              {/* Movie Poster - First Column */}
+              <div className="flex-shrink-0">
+                <img
+                  src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
+                  alt={movie.title}
+                  className="w-16 h-24 object-cover rounded"
+                />
               </div>
 
-              {/* Movie Info */}
+              {/* Movie Info - Second Column */}
               <div className="flex-1 min-w-0">
                 <div className="text-left mb-2">
-                  <h4 className="font-medium text-sm text-gray-900 truncate">
+                  <h4 className="font-medium text-sm text-white truncate">
                     {movie.title}
                   </h4>
-                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                  <p className="text-xs text-neutral-400 mt-1 line-clamp-2">
                     {movie.recommendation_reason || movie.overview}
                   </p>
                 </div>
 
                 {/* Movie Details */}
-                <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+                <div className="flex flex-wrap gap-2 text-xs text-neutral-400">
                   {/* Release Date */}
                   <div className="flex items-center space-x-1">
                     <Calendar className="h-3 w-3" />
@@ -218,7 +222,7 @@ export function RecentTopReleases() {
                 </div>
 
                 {/* Additional Details */}
-                <div className="flex flex-wrap gap-2 mt-1 text-xs text-gray-500">
+                <div className="flex flex-wrap gap-2 mt-1 text-xs text-neutral-400">
                   {/* Runtime */}
                   {movie.omdbData?.Runtime && movie.omdbData.Runtime !== "N/A" && (
                     <div className="flex items-center space-x-1">
@@ -248,20 +252,11 @@ export function RecentTopReleases() {
                 )}
               </div>
             </div>
-          ))}
-        </div>
+          ));
+        })()}
+      </div>
 
-        {/* View All Button */}
-        <div className="mt-4 pt-4 border-t">
-          <Button 
-            onClick={() => router.push('/dashboard/flick-search')}
-            className="w-full"
-            variant="outline"
-          >
-            View All Movies
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+
+    </div>
   );
 } 
