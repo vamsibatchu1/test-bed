@@ -538,29 +538,7 @@ Make it fun, creative, and personalized to their selections. The nickname should
           </div>
         </div>
 
-        {/* Meet AI Curator */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">Meet AI Curator</h2>
-          </div>
-          <div className="p-4 rounded-lg bg-neutral-900 border-neutral-700">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-white">Your Personal Movie Guide</h3>
-                <p className="text-sm text-neutral-400">Get personalized recommendations based on your taste</p>
-              </div>
-            </div>
-            <Button 
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-              onClick={() => setShowProfileBuilder(true)}
-            >
-              Start Building Your Profile
-            </Button>
-          </div>
-        </div>
+
       </div>
     </DashboardLayout>
   );
