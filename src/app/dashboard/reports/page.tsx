@@ -105,10 +105,15 @@ export default function MySavedFlicks() {
       <DashboardLayout>
         <div className="p-4 bg-[#F0EFEB] overflow-y-auto scrollbar-hide">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">My Library</h1>
+            <div>
+              <h1 className="text-2xl font-bold">My Library</h1>
+              <p className="text-neutral-400 text-sm mt-1">
+                Organize your movies into custom folders and collections
+              </p>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            {[...Array(6)].map((_, i) => (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
                   <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -130,7 +135,12 @@ export default function MySavedFlicks() {
       <DashboardLayout>
         <div className="p-4 bg-[#F0EFEB] overflow-y-auto scrollbar-hide">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">My Library</h1>
+            <div>
+              <h1 className="text-2xl font-bold">My Library</h1>
+              <p className="text-neutral-400 text-sm mt-1">
+                Organize your movies into custom folders and collections
+              </p>
+            </div>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="ghost" className="p-2 h-auto bg-transparent hover:bg-transparent">
@@ -199,7 +209,12 @@ export default function MySavedFlicks() {
     <DashboardLayout>
               <div className="p-4 overflow-y-auto scrollbar-hide">
                   <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">My Library</h1>
+            <div>
+              <h1 className="text-2xl font-bold">My Library</h1>
+              <p className="text-neutral-400 text-sm mt-1">
+                Organize your movies into custom folders and collections
+              </p>
+            </div>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="ghost" className="p-2 h-auto bg-transparent hover:bg-transparent">
@@ -247,7 +262,7 @@ export default function MySavedFlicks() {
           </Dialog>
         </div>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-4">
           {folders.map((folder) => (
             <Card key={folder.id} className="group hover:shadow-lg transition-shadow">
               <CardHeader className="pb-0">

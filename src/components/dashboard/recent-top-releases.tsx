@@ -7,32 +7,10 @@ import { Button } from "@/components/ui/button";
 import { 
   Star, 
   Calendar, 
-  Clock, 
-  Award,
-  ExternalLink,
   RefreshCw
 } from "lucide-react";
-import { movieRecommendationService } from "@/lib/movie-recommendations";
+import { movieRecommendationService, type MovieRecommendation, type DashboardMovies } from "@/lib/movie-recommendations";
 import { useRouter } from "next/navigation";
-
-interface MovieRecommendation {
-  id: number;
-  title: string;
-  overview: string;
-  poster_path: string;
-  release_date: string;
-  vote_average: number;
-  vote_count: number;
-  imdb_id?: string;
-  omdbData?: {
-    imdbRating: string;
-    Ratings: Array<{ Source: string; Value: string }>;
-    Awards: string;
-    Genre: string;
-    Runtime: string;
-  };
-  recommendation_reason?: string;
-}
 
 export function RecentTopReleases() {
   const [movies, setMovies] = useState<MovieRecommendation[]>([]);
@@ -41,22 +19,22 @@ export function RecentTopReleases() {
   const router = useRouter();
 
   useEffect(() => {
-    fetchMovies();
-  }, []);
-
-  const fetchMovies = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const recommendations = await movieRecommendationService.getTopRecentMovies();
-      setMovies(recommendations);
-    } catch (err) {
-      setError('Failed to load movie recommendations');
-      console.error('Error fetching movies:', err);
-    } finally {
+    console.log('RecentTopReleases: Subscribing to movie service...');
+    
+    // Subscribe to movie recommendation service
+    const unsubscribe = movieRecommendationService.subscribe((dashboardMovies: DashboardMovies) => {
+      console.log('RecentTopReleases: Received movies:', dashboardMovies.topReleases.length);
+      setMovies(dashboardMovies.topReleases);
       setLoading(false);
-    }
-  };
+    });
+    
+    // Initialize if needed
+    movieRecommendationService.initializeDashboard();
+    
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -66,22 +44,7 @@ export function RecentTopReleases() {
     });
   };
 
-  const getRatingValue = (ratings: Array<{ Source: string; Value: string }>, source: string) => {
-    const rating = ratings.find(r => r.Source === source);
-    return rating ? rating.Value : "N/A";
-  };
 
-  const getAwardsCount = (awards: string) => {
-    if (!awards || awards === "N/A") return "0";
-    
-    const winsMatch = awards.match(/(\d+)\s+win/);
-    const nominationsMatch = awards.match(/(\d+)\s+nomination/);
-    
-    const wins = winsMatch ? parseInt(winsMatch[1]) : 0;
-    const nominations = nominationsMatch ? parseInt(nominationsMatch[1]) : 0;
-    
-    return (wins + nominations).toString();
-  };
 
   const handleMovieClick = (movie: MovieRecommendation) => {
     // Navigate to search page with movie pre-selected
@@ -127,7 +90,7 @@ export function RecentTopReleases() {
         </div>
         <div className="text-center py-8">
           <p className="text-muted-foreground mb-4">{error}</p>
-          <Button onClick={fetchMovies} variant="outline">
+          <Button onClick={() => movieRecommendationService.refreshDashboardMovies()} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Try Again
           </Button>
@@ -147,7 +110,7 @@ export function RecentTopReleases() {
             </p>
           </div>
           <Button 
-            onClick={fetchMovies} 
+            onClick={() => movieRecommendationService.refreshDashboardMovies()} 
             variant="ghost" 
             size="sm"
             className="h-8 w-8 p-0"
@@ -158,13 +121,11 @@ export function RecentTopReleases() {
       </div>
             <div className="grid grid-cols-2 gap-4">
         {(() => {
-          const moviesWithPosters = movies.filter(movie => movie.poster_path);
-          
-          if (moviesWithPosters.length === 0) {
+          if (movies.length === 0) {
             return (
               <div className="col-span-2 text-center py-8">
                 <p className="text-neutral-400 mb-4">No movies with posters available</p>
-                <Button onClick={fetchMovies} variant="outline">
+                <Button onClick={() => movieRecommendationService.refreshDashboardMovies()} variant="outline">
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Try Again
                 </Button>
@@ -172,7 +133,7 @@ export function RecentTopReleases() {
             );
           }
           
-          return moviesWithPosters.slice(0, 4).map((movie) => (
+          return movies.filter(movie => movie.poster_path).slice(0, 4).map((movie) => (
             <div 
               key={movie.id}
               className="flex flex-row space-x-3 p-3 rounded-lg hover:bg-neutral-800 cursor-pointer transition-colors"
@@ -184,6 +145,10 @@ export function RecentTopReleases() {
                   src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
                   alt={movie.title}
                   className="w-16 h-24 object-cover rounded"
+                  onError={() => {
+                    // Use the service to replace broken movie
+                    movieRecommendationService.replaceBrokenMovie('topReleases', movie.id);
+                  }}
                 />
               </div>
 
@@ -198,7 +163,7 @@ export function RecentTopReleases() {
                   </p>
                 </div>
 
-                {/* Movie Details */}
+                {/* Movie Details - Only Date and Rating */}
                 <div className="flex flex-wrap gap-2 text-xs text-neutral-400">
                   {/* Release Date */}
                   <div className="flex items-center space-x-1">
@@ -211,45 +176,7 @@ export function RecentTopReleases() {
                     <Star className="h-3 w-3 text-yellow-500" />
                     <span>{movie.vote_average.toFixed(1)}</span>
                   </div>
-
-                  {/* IMDb Rating */}
-                  {movie.omdbData?.imdbRating && (
-                    <div className="flex items-center space-x-1">
-                      <span className="font-semibold text-yellow-600">IMDb</span>
-                      <span>{movie.omdbData.imdbRating}</span>
-                    </div>
-                  )}
                 </div>
-
-                {/* Additional Details */}
-                <div className="flex flex-wrap gap-2 mt-1 text-xs text-neutral-400">
-                  {/* Runtime */}
-                  {movie.omdbData?.Runtime && movie.omdbData.Runtime !== "N/A" && (
-                    <div className="flex items-center space-x-1">
-                      <Clock className="h-3 w-3" />
-                      <span>{movie.omdbData.Runtime}</span>
-                    </div>
-                  )}
-
-                  {/* Awards */}
-                  {movie.omdbData?.Awards && movie.omdbData.Awards !== "N/A" && (
-                    <div className="flex items-center space-x-1">
-                      <Award className="h-3 w-3 text-yellow-600" />
-                      <span>{getAwardsCount(movie.omdbData.Awards)}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Genre Tags */}
-                {movie.omdbData?.Genre && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {movie.omdbData.Genre.split(', ').slice(0, 2).map((genre) => (
-                      <Badge key={genre} variant="secondary" className="text-xs">
-                        {genre}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           ));

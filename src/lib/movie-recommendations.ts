@@ -23,13 +23,33 @@ interface OpenAIRecommendation {
   title: string;
   year: string;
   reason: string;
+  genre: string;
+}
+
+interface DashboardMovies {
+  recentWatched: MovieRecommendation[];
+  topReleases: MovieRecommendation[];
+  isLoading: boolean;
+  lastUpdated: number;
 }
 
 export class MovieRecommendationService {
   private static instance: MovieRecommendationService;
-  private cache: MovieRecommendation[] = [];
-  private lastFetch: number = 0;
-  private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+  private topReleasesCache: MovieRecommendation[] = [];
+  private lastTopReleasesFetch: number = 0;
+  private readonly TOP_RELEASES_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+  
+  // Dashboard functionality
+  private dashboardMovies: DashboardMovies = {
+    recentWatched: [],
+    topReleases: [],
+    isLoading: false,
+    lastUpdated: 0
+  };
+  private listeners: Set<(movies: DashboardMovies) => void> = new Set();
+  private refreshInterval: NodeJS.Timeout | null = null;
+  private readonly DASHBOARD_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+  private readonly REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
   static getInstance(): MovieRecommendationService {
     if (!MovieRecommendationService.instance) {
@@ -38,13 +58,183 @@ export class MovieRecommendationService {
     return MovieRecommendationService.instance;
   }
 
+  constructor() {
+    this.startAutoRefresh();
+  }
+
+  // ===== DASHBOARD FUNCTIONALITY =====
+
+  // Subscribe to movie updates
+  subscribe(callback: (movies: DashboardMovies) => void): () => void {
+    this.listeners.add(callback);
+    
+    // Return unsubscribe function
+    return () => {
+      this.listeners.delete(callback);
+    };
+  }
+
+  // Notify all listeners
+  private notifyListeners() {
+    this.listeners.forEach(callback => callback(this.dashboardMovies));
+  }
+
+  // Get current dashboard movies
+  getDashboardMovies(): DashboardMovies {
+    return this.dashboardMovies;
+  }
+
+  // Check if dashboard cache is stale
+  private isDashboardCacheStale(): boolean {
+    return Date.now() - this.dashboardMovies.lastUpdated > this.DASHBOARD_CACHE_DURATION;
+  }
+
+  // Load recent watched movies
+  private async loadRecentWatchedMovies(): Promise<MovieRecommendation[]> {
+    try {
+      console.log('MovieRecommendationService: Loading recent watched movies...');
+      const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+      
+      if (!apiKey) {
+        console.error('MovieRecommendationService: TMDB API key not found');
+        return this.getFallbackRecommendations().slice(0, 6);
+      }
+      
+      const response = await fetch(
+        `https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}&page=1`
+      );
+      
+      if (!response.ok) {
+        console.error('MovieRecommendationService: TMDB API error:', response.status);
+        return this.getFallbackRecommendations().slice(0, 6);
+      }
+      
+      const data = await response.json();
+      console.log('MovieRecommendationService: TMDB response for recent watched:', data.results?.length);
+      
+      // Filter movies with posters
+      const moviesWithPosters = data.results.filter((movie: MovieRecommendation) => movie.poster_path);
+      
+      return moviesWithPosters.slice(0, 15); // Keep 15 for alternatives
+    } catch (error) {
+      console.error('Error loading recent watched movies:', error);
+      return this.getFallbackRecommendations().slice(0, 6);
+    }
+  }
+
+  // Refresh dashboard movie data
+  async refreshDashboardMovies(): Promise<void> {
+    if (this.dashboardMovies.isLoading) return;
+    
+    console.log('MovieRecommendationService: Starting dashboard refresh...');
+    this.dashboardMovies.isLoading = true;
+    this.notifyListeners();
+    
+    try {
+      const [recentWatched, topReleases] = await Promise.all([
+        this.loadRecentWatchedMovies(),
+        this.getTopRecentMovies()
+      ]);
+      
+      console.log('MovieRecommendationService: Loaded dashboard movies:', { 
+        recentWatched: recentWatched.length, 
+        topReleases: topReleases.length 
+      });
+      
+      this.dashboardMovies = {
+        recentWatched,
+        topReleases,
+        isLoading: false,
+        lastUpdated: Date.now()
+      };
+      
+      this.notifyListeners();
+    } catch (error) {
+      console.error('Error refreshing dashboard movies:', error);
+      this.dashboardMovies.isLoading = false;
+      this.notifyListeners();
+    }
+  }
+
+  // Initialize dashboard (called on app start)
+  async initializeDashboard(): Promise<void> {
+    console.log('MovieRecommendationService: Initializing dashboard...');
+    if (this.dashboardMovies.lastUpdated === 0 || this.isDashboardCacheStale()) {
+      console.log('MovieRecommendationService: Dashboard cache is stale or empty, refreshing...');
+      await this.refreshDashboardMovies();
+    } else {
+      console.log('MovieRecommendationService: Using cached dashboard data');
+      this.notifyListeners();
+    }
+  }
+
+  // Start automatic refresh
+  private startAutoRefresh(): void {
+    this.refreshInterval = setInterval(() => {
+      if (this.isDashboardCacheStale()) {
+        this.refreshDashboardMovies();
+      }
+    }, this.REFRESH_INTERVAL);
+  }
+
+  // Stop automatic refresh
+  stopAutoRefresh(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
+  }
+
+  // Get movies for specific sections
+  getRecentWatchedMovies(count: number = 6): MovieRecommendation[] {
+    return this.dashboardMovies.recentWatched.slice(0, count);
+  }
+
+  getTopReleasesMovies(count: number = 4): MovieRecommendation[] {
+    // Ensure we return exactly the requested number of movies with posters
+    const moviesWithPosters = this.dashboardMovies.topReleases.filter(movie => movie.poster_path);
+    return moviesWithPosters.slice(0, count);
+  }
+
+  // Replace broken movie with alternative
+  replaceBrokenMovie(section: 'recentWatched' | 'topReleases', brokenMovieId: number): void {
+    const currentMovies = this.dashboardMovies[section];
+    const currentIndex = currentMovies.findIndex(movie => movie.id === brokenMovieId);
+    
+    if (currentIndex === -1) return;
+    
+    // Find available movies from the same section
+    const availableMovies = this.dashboardMovies[section].filter(movie => 
+      movie.id !== brokenMovieId && 
+      !currentMovies.slice(0, currentIndex + 1).some(m => m.id === movie.id)
+    );
+    
+    if (availableMovies.length === 0) {
+      // Remove the broken movie
+      this.dashboardMovies[section] = currentMovies.filter(movie => movie.id !== brokenMovieId);
+    } else {
+      // Replace with alternative
+      const replacement = availableMovies[0];
+      const newList = [...currentMovies];
+      newList[currentIndex] = replacement;
+      this.dashboardMovies[section] = newList;
+    }
+    
+    this.notifyListeners();
+  }
+
+  // ===== ORIGINAL TOP RELEASES FUNCTIONALITY =====
+
   async getTopRecentMovies(): Promise<MovieRecommendation[]> {
     // Check cache first
-    if (this.cache.length > 0 && Date.now() - this.lastFetch < this.CACHE_DURATION) {
-      return this.cache;
+    if (this.topReleasesCache.length > 0 && Date.now() - this.lastTopReleasesFetch < this.TOP_RELEASES_CACHE_DURATION) {
+      console.log('MovieRecommendationService: Using cached top releases');
+      return this.topReleasesCache;
     }
 
     try {
+      console.log('MovieRecommendationService: Fetching new top releases...');
+      
       // Step 1: Get movie recommendations from OpenAI
       const openAIRecommendations = await this.getOpenAIRecommendations();
       
@@ -52,35 +242,48 @@ export class MovieRecommendationService {
       const enrichedMovies = await this.enrichMovieData(openAIRecommendations);
       
       // Update cache
-      this.cache = enrichedMovies;
-      this.lastFetch = Date.now();
+      this.topReleasesCache = enrichedMovies;
+      this.lastTopReleasesFetch = Date.now();
       
+      console.log('MovieRecommendationService: Successfully fetched', enrichedMovies.length, 'top releases');
       return enrichedMovies;
     } catch (error) {
       console.error('Error fetching movie recommendations:', error);
+      console.log('MovieRecommendationService: Using fallback recommendations');
       // Return fallback recommendations if APIs fail
       return this.getFallbackRecommendations();
     }
   }
 
   private async getOpenAIRecommendations(): Promise<OpenAIRecommendation[]> {
-    const prompt = `You are a movie expert. Provide a list of exactly 6 top-rated movies from the past 3-4 months (${this.getDateRange()}) that have received critical acclaim, high audience ratings, or significant buzz. 
+    const now = new Date();
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+    
+    const prompt = `You are a movie expert. Provide a list of exactly 12 popular movies from the past 6 months (${sixMonthsAgo.toLocaleDateString()} to ${now.toLocaleDateString()}) that have good ratings and are well-known. 
+
+REQUIREMENTS:
+- Include movies released between ${sixMonthsAgo.toLocaleDateString()} and ${now.toLocaleDateString()}
+- Include popular blockbusters, critically acclaimed films, and audience favorites
+- Mix of different genres
+- Movies that people have actually heard of and watched
 
 For each movie, provide:
 - Exact title
-- Year (2024)
+- Year (2024 or 2025)
 - Brief reason why it's recommended (1-2 sentences)
+- Primary genre (Action, Comedy, Drama, Horror, Romance, Sci-Fi, Thriller, Animation, Documentary, etc.)
 
 Format as JSON array:
 [
   {
     "title": "Movie Title",
     "year": "2024", 
-    "reason": "Brief recommendation reason"
+    "reason": "Brief recommendation reason",
+    "genre": "Primary genre"
   }
 ]
 
-Focus on movies with high ratings, awards buzz, or significant cultural impact. Include a mix of genres.`;
+Focus on movies that are popular and have good ratings, not just critically acclaimed ones.`;
 
     try {
       const response = await fetch('/api/movie-recommendations', {
@@ -105,8 +308,12 @@ Focus on movies with high ratings, awards buzz, or significant cultural impact. 
 
   private async enrichMovieData(recommendations: OpenAIRecommendation[]): Promise<MovieRecommendation[]> {
     const enrichedMovies: MovieRecommendation[] = [];
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - 6); // 6 months ago
 
-          for (const rec of recommendations.slice(0, 6)) {
+    console.log(`MovieRecommendationService: Filtering for movies after ${cutoffDate.toISOString()}`);
+
+    for (const rec of recommendations.slice(0, 12)) {
       try {
         // Search TMDB for the movie
         const tmdbMovie = await this.searchTMDBMovie(rec.title, rec.year);
@@ -116,12 +323,27 @@ Focus on movies with high ratings, awards buzz, or significant cultural impact. 
           const detailedMovie = await this.getTMDBMovieDetails(tmdbMovie.id);
           
           if (detailedMovie) {
-            // Get OMDB data if we have IMDb ID
+            // DATE FILTERING - Only include movies from past 6 months
+            if (!this.isWithinDateRange(detailedMovie.release_date)) {
+              console.log(`MovieRecommendationService: Skipping ${detailedMovie.title} (${detailedMovie.release_date}) - too old`);
+              continue;
+            }
+            
+            // Get OMDB data for IMDb rating
             let omdbData = undefined;
             if (detailedMovie.imdb_id && process.env.NEXT_PUBLIC_OMDB_API_KEY) {
               const omdbResult = await this.getOMDBData(detailedMovie.imdb_id);
               omdbData = omdbResult || undefined;
             }
+            
+            // Check IMDb rating requirement (> 7.0)
+            const imdbRating = omdbData?.imdbRating ? parseFloat(omdbData.imdbRating) : 0;
+            if (imdbRating > 0 && imdbRating <= 7.0) {
+              console.log(`MovieRecommendationService: Skipping ${detailedMovie.title} - IMDb rating ${imdbRating} <= 7.0`);
+              continue;
+            }
+            
+            console.log(`MovieRecommendationService: Including ${detailedMovie.title} (${detailedMovie.release_date}) - IMDb: ${imdbRating}`);
 
             enrichedMovies.push({
               ...detailedMovie,
@@ -135,6 +357,7 @@ Focus on movies with high ratings, awards buzz, or significant cultural impact. 
       }
     }
 
+    console.log(`MovieRecommendationService: Final filtered movies: ${enrichedMovies.length}`);
     return enrichedMovies;
   }
 
@@ -172,13 +395,21 @@ Focus on movies with high ratings, awards buzz, or significant cultural impact. 
 
   private getDateRange(): string {
     const now = new Date();
-    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
     
-    return `${threeMonthsAgo.toLocaleDateString()} to ${now.toLocaleDateString()}`;
+    return `${sixMonthsAgo.toLocaleDateString()} to ${now.toLocaleDateString()}`;
+  }
+
+  private isWithinDateRange(releaseDate: string): boolean {
+    const movieDate = new Date(releaseDate);
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - 6); // 6 months ago
+    
+    return movieDate >= cutoffDate;
   }
 
   private getFallbackRecommendations(): MovieRecommendation[] {
-    // Fallback recommendations if APIs fail
+    // Fallback recommendations if APIs fail - ONLY recent movies from past 6 months
     return [
       {
         id: 1,
@@ -244,4 +475,5 @@ Focus on movies with high ratings, awards buzz, or significant cultural impact. 
   }
 }
 
-export const movieRecommendationService = MovieRecommendationService.getInstance(); 
+export const movieRecommendationService = MovieRecommendationService.getInstance();
+export type { MovieRecommendation, DashboardMovies }; 

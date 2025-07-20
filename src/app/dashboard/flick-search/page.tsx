@@ -376,7 +376,12 @@ export default function FlickSearchPage() {
     <DashboardLayout>
       <div className="p-4 bg-neutral-950 min-h-screen overflow-y-auto scrollbar-hide">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-4 text-white">Flick Search</h1>
+          <div className="mb-4">
+          <h1 className="text-2xl font-bold text-white">Flick Search</h1>
+          <p className="text-neutral-400 text-sm mt-1">
+            Discover new films, check ratings, and find your next favorite movie
+          </p>
+        </div>
           
           {/* Search Form */}
           <form onSubmit={handleSearch} className="max-w-md">
