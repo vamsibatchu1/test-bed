@@ -457,22 +457,22 @@ Make it fun, creative, and personalized to their selections. The nickname should
           <p className="text-neutral-400 mt-1">{getSubGreeting()}</p>
         </div>
 
-        {/* Getting Started Section */}
+                {/* Getting Started Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">Getting Started</h2>
-          </div>
+                    </div>
           <div className="flex gap-4 overflow-x-auto scrollbar-hide">
             {actionCards.map((card, index) => (
               <div 
                 key={index}
-                className="flex flex-col items-start justify-start p-4 rounded-lg cursor-pointer transition-all flex-shrink-0 bg-green-900 hover:bg-green-800"
-                style={{ width: 'calc(25% - 1rem)' }}
+                className="flex flex-col items-start justify-start p-4 rounded-lg cursor-pointer transition-all flex-shrink-0 bg-neutral-800 hover:bg-neutral-700"
+                style={{ width: '200px' }}
                 onClick={card.onClick}
               >
                 <div className="mb-3">
                   <card.icon className="h-5 w-5 text-white" />
-                </div>
+                  </div>
                 <div className="text-left">
                   <h4 className="font-medium text-sm mb-1 text-white">
                     {card.title}
@@ -491,19 +491,25 @@ Make it fun, creative, and personalized to their selections. The nickname should
           <RecentTopReleases />
         </div>
 
-        {/* Quick Genres */}
+                {/* Quick Genres */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">Quick Genres</h2>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {["Action", "Comedy", "Drama", "Horror"].map((genre) => (
+            {[
+              { name: "Action", icon: Zap },
+              { name: "Comedy", icon: Heart },
+              { name: "Drama", icon: Film },
+              { name: "Horror", icon: Sparkles }
+            ].map((genre) => (
               <div
-                key={genre}
-                className="flex items-center justify-center p-4 rounded-lg bg-neutral-900 border-neutral-700 cursor-pointer hover:bg-neutral-800 transition-colors"
-                onClick={() => router.push(`/dashboard/flick-search?genre=${genre}`)}
+                key={genre.name}
+                className="flex items-center p-4 rounded-lg bg-neutral-900 border-neutral-700 cursor-pointer hover:bg-neutral-800 transition-colors"
+                onClick={() => router.push(`/dashboard/flick-search?genre=${genre.name}`)}
               >
-                <span className="text-white font-medium">{genre}</span>
+                <genre.icon className="h-4 w-4 text-white mr-2" />
+                <span className="text-white font-medium">{genre.name}</span>
               </div>
             ))}
           </div>
@@ -518,21 +524,34 @@ Make it fun, creative, and personalized to their selections. The nickname should
             {recentMovies.slice(0, 6).map((movie) => (
               <div
                 key={movie.id}
-                className="flex-shrink-0 w-20 h-32 bg-neutral-800 rounded-lg overflow-hidden"
+                className="flex-shrink-0 w-20"
               >
-                {movie.poster_path ? (
-                  <img
-                    src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                    alt={movie.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-neutral-400 text-xs text-center px-1">
-                      {movie.title}
+                <div className="w-20 h-32 bg-neutral-800 rounded-lg overflow-hidden mb-2">
+                  {movie.poster_path ? (
+                    <img
+                      src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                      alt={movie.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-neutral-400 text-xs text-center px-1">
+                        {movie.title}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="text-left">
+                  <h4 className="text-xs font-medium text-white truncate mb-1">
+                    {movie.title}
+                  </h4>
+                  <div className="flex items-center gap-1">
+                    <Star className="h-2 w-2 text-yellow-500" />
+                    <span className="text-xs text-neutral-400">
+                      {movie.vote_average.toFixed(1)}
                     </span>
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>
