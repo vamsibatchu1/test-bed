@@ -118,61 +118,64 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-black py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center">
-            <Film className="h-12 w-12 text-red-600" />
+            <img 
+              src="/logomain.png" 
+              alt="GoodFlicks Logo" 
+              className="h-64 w-auto"
+            />
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">GoodFlicks</h2>
         </div>
 
         {/* Auth Tabs */}
-        <Card>
-          <CardHeader>
+        <Card className="bg-neutral-900 border-neutral-800">
+          <CardHeader className="pb-6">
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Create Account</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-neutral-800">
+                <TabsTrigger value="signin" className="data-[state=active]:bg-neutral-700 data-[state=active]:text-white">Sign In</TabsTrigger>
+                <TabsTrigger value="signup" className="data-[state=active]:bg-neutral-700 data-[state=active]:text-white">Create Account</TabsTrigger>
               </TabsList>
 
               {/* Sign In Tab */}
               <TabsContent value="signin" className="mt-6">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signInEmail">Email Address</Label>
+                    <Label htmlFor="signInEmail" className="text-white">Email Address</Label>
                     <Input
                       id="signInEmail"
                       type="email"
-                      placeholder="Enter your email"
                       value={signInEmail}
                       onChange={(e) => setSignInEmail(e.target.value)}
+                      className="bg-neutral-800 border-neutral-700 text-white focus:border-red-500"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signInPassword">Password</Label>
+                    <Label htmlFor="signInPassword" className="text-white">Password</Label>
                     <Input
                       id="signInPassword"
                       type="password"
-                      placeholder="Enter your password"
                       value={signInPassword}
                       onChange={(e) => setSignInPassword(e.target.value)}
+                      className="bg-neutral-800 border-neutral-700 text-white focus:border-red-500"
                       required
                     />
                   </div>
 
                   {signInError && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{signInError}</AlertDescription>
+                    <Alert variant="destructive" className="bg-red-950 border-red-800">
+                      <AlertDescription className="text-red-200">{signInError}</AlertDescription>
                     </Alert>
                   )}
 
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full bg-white hover:bg-gray-100 text-black font-medium"
                     disabled={signInLoading}
                   >
                     {signInLoading ? (
@@ -191,62 +194,62 @@ export default function AuthPage() {
               <TabsContent value="signup" className="mt-6">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
+                    <Label htmlFor="fullName" className="text-white">Full Name</Label>
                     <Input
                       id="fullName"
                       type="text"
-                      placeholder="Enter your full name"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
+                      className="bg-neutral-800 border-neutral-700 text-white focus:border-red-500"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signUpEmail">Email Address</Label>
+                    <Label htmlFor="signUpEmail" className="text-white">Email Address</Label>
                     <Input
                       id="signUpEmail"
                       type="email"
-                      placeholder="Enter your email"
                       value={signUpEmail}
                       onChange={(e) => setSignUpEmail(e.target.value)}
+                      className="bg-neutral-800 border-neutral-700 text-white focus:border-red-500"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signUpPassword">Password</Label>
+                    <Label htmlFor="signUpPassword" className="text-white">Password</Label>
                     <Input
                       id="signUpPassword"
                       type="password"
-                      placeholder="Create a password"
                       value={signUpPassword}
                       onChange={(e) => setSignUpPassword(e.target.value)}
+                      className="bg-neutral-800 border-neutral-700 text-white focus:border-red-500"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
                     <Input
                       id="confirmPassword"
                       type="password"
-                      placeholder="Confirm your password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="bg-neutral-800 border-neutral-700 text-white focus:border-red-500"
                       required
                     />
                   </div>
 
                   {signUpError && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{signUpError}</AlertDescription>
+                    <Alert variant="destructive" className="bg-red-950 border-red-800">
+                      <AlertDescription className="text-red-200">{signUpError}</AlertDescription>
                     </Alert>
                   )}
 
                   {signUpSuccess && (
-                    <Alert>
-                      <AlertDescription>
+                    <Alert className="bg-green-950 border-green-800">
+                      <AlertDescription className="text-green-200">
                         Account created successfully! You can now sign in.
                       </AlertDescription>
                     </Alert>
@@ -254,7 +257,7 @@ export default function AuthPage() {
 
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full bg-white hover:bg-gray-100 text-black font-medium"
                     disabled={signUpLoading}
                   >
                     {signUpLoading ? (
