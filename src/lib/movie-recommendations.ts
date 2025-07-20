@@ -115,17 +115,20 @@ Focus on movies with high ratings, awards buzz, or significant cultural impact. 
           // Get detailed TMDB info
           const detailedMovie = await this.getTMDBMovieDetails(tmdbMovie.id);
           
-          // Get OMDB data if we have IMDb ID
-          let omdbData = undefined;
-          if (detailedMovie.imdb_id && process.env.NEXT_PUBLIC_OMDB_API_KEY) {
-            omdbData = await this.getOMDBData(detailedMovie.imdb_id);
-          }
+          if (detailedMovie) {
+            // Get OMDB data if we have IMDb ID
+            let omdbData = undefined;
+            if (detailedMovie.imdb_id && process.env.NEXT_PUBLIC_OMDB_API_KEY) {
+              const omdbResult = await this.getOMDBData(detailedMovie.imdb_id);
+              omdbData = omdbResult || undefined;
+            }
 
-          enrichedMovies.push({
-            ...detailedMovie,
-            omdbData,
-            recommendation_reason: rec.reason
-          });
+            enrichedMovies.push({
+              ...detailedMovie,
+              omdbData,
+              recommendation_reason: rec.reason
+            });
+          }
         }
       } catch (error) {
         console.warn(`Failed to enrich data for ${rec.title}:`, error);

@@ -2,22 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/layout";
-import { MovieDiscovery } from "@/components/dashboard/movie-discovery";
 import { RecentTopReleases } from "@/components/dashboard/recent-top-releases";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   Search, 
   User, 
   FolderPlus, 
   Star, 
-  Calendar,
-  Clock,
-  Bookmark,
-  Eye,
-  Plus,
-  Award,
   Film,
   Heart,
   Zap,
@@ -25,7 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
-import { markFirstSearch, markFirstSave, markFirstLibrary } from "@/lib/progress-tracker";
+import { markFirstLibrary } from "@/lib/progress-tracker";
 
 interface ProfileQuestion {
   id: string;
@@ -68,38 +61,9 @@ export default function DashboardPage() {
   const [personalityProfile, setPersonalityProfile] = useState<PersonalityProfile | null>(null);
   const [recentMovies, setRecentMovies] = useState<Movie[]>([]);
 
-  // Progress tracking
-  const [progress, setProgress] = useState({
-    firstSearch: false,
-    firstSave: false,
-    firstLibrary: false
-  });
-
   useEffect(() => {
-    // Load progress from localStorage
-    const savedProgress = localStorage.getItem('userProgress');
-    if (savedProgress) {
-      setProgress(JSON.parse(savedProgress));
-    }
-
-    // Listen for progress updates
-    const handleProgressUpdate = (event: CustomEvent) => {
-      const { type } = event.detail;
-      setProgress(prev => {
-        const newProgress = { ...prev, [type]: true };
-        localStorage.setItem('userProgress', JSON.stringify(newProgress));
-        return newProgress;
-      });
-    };
-
-    window.addEventListener('progressUpdate', handleProgressUpdate as EventListener);
-    
     // Load initial data
     loadDashboardData();
-
-    return () => {
-      window.removeEventListener('progressUpdate', handleProgressUpdate as EventListener);
-    };
   }, []);
 
   const loadDashboardData = async () => {
@@ -271,7 +235,6 @@ Make it fun, creative, and personalized to their selections. The nickname should
   const generateLocalPersonality = (selections: Record<string, string[]>) => {
     const genres = selections.genres || [];
     const watchHabits = selections.watchHabits || [];
-    const moods = selections.mood || [];
     
     // Simple logic to determine personality type
     let nickname = "Movie Enthusiast";
