@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { markFirstLibrary } from "@/lib/progress-tracker";
 import { movieRecommendationService, type MovieRecommendation, type DashboardMovies } from "@/lib/movie-recommendations";
+import { genreMovieCollections, type MoodPlaylist } from "@/lib/genre-movie-collections";
 
 interface ProfileQuestion {
   id: string;
@@ -47,6 +48,7 @@ export default function DashboardPage() {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
   const [personalityProfile, setPersonalityProfile] = useState<PersonalityProfile | null>(null);
   const [recentMovies, setRecentMovies] = useState<MovieRecommendation[]>([]);
+  const [moodPlaylists, setMoodPlaylists] = useState<MoodPlaylist[]>([]);
 
   useEffect(() => {
     // Initialize dashboard movie service
@@ -60,6 +62,9 @@ export default function DashboardPage() {
     
     // Load initial data
     loadDashboardData();
+    
+    // Load mood playlists with guaranteed posters
+    setMoodPlaylists(genreMovieCollections.getAllMoodPlaylists());
     
     // Cleanup subscription on unmount
     return () => {
@@ -78,6 +83,11 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const refreshMoodPlaylists = () => {
+    // Refresh all playlists with new random movies
+    setMoodPlaylists(genreMovieCollections.getAllMoodPlaylists());
   };
 
   const loadRecentMovies = async () => {
@@ -461,68 +471,7 @@ Make it fun, creative, and personalized to their selections. The nickname should
             <h2 className="text-2xl font-bold text-white">Done Your Mode</h2>
           </div>
           <div className="flex gap-4 overflow-x-auto scrollbar-hide">
-            {[
-              {
-                title: "Feeling Sad",
-                description: "A curated list of uplifting movies to brighten your mood",
-                movieCount: "12 movies",
-                genre: "Feel-good, Comedy, Drama",
-                movies: [
-                  { title: "The Secret Life of Walter Mitty", overview: "A daydreamer escapes his anonymous life by disappearing into a world of fantasies.", poster: "https://image.tmdb.org/t/p/w92/d5NXSklXo0qyIYkgV94XAgMIckC.jpg" },
-                  { title: "La La Land", overview: "A jazz pianist falls for an aspiring actress in Los Angeles.", poster: "https://image.tmdb.org/t/p/w92/kCGlIMHnOm8JPXq3rXM6c5wMxcT.jpg" },
-                  { title: "The Grand Budapest Hotel", overview: "A writer encounters the owner of an aging high-class hotel.", poster: "https://image.tmdb.org/t/p/w92/4aQqCDa95shNd6TSKAqBErXKGYk.jpg" },
-                  { title: "Paddington", overview: "A young Peruvian bear travels to London in search of a home.", poster: "https://image.tmdb.org/t/p/w92/dB6KrkMQzeJ0eZ4k5m3VFyQRarZ.jpg" }
-                ]
-              },
-              {
-                title: "Action Night",
-                description: "High-octane thrillers and action-packed adventures",
-                movieCount: "8 movies",
-                genre: "Action, Thriller, Adventure",
-                movies: [
-                  { title: "Oppenheimer", overview: "The story of J. Robert Oppenheimer's role in the development of the atomic bomb.", poster: "https://image.tmdb.org/t/p/w92/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg" },
-                  { title: "John Wick: Chapter 4", overview: "With the price on his head ever increasing, John Wick uncovers a path to defeating The High Table.", poster: "https://image.tmdb.org/t/p/w92/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg" },
-                  { title: "Fast X", overview: "Over many missions and against impossible odds, Dom Toretto and his family have outsmarted every foe.", poster: "https://image.tmdb.org/t/p/w92/fiVW06jE7z9YnO4trhaMEdclSiC.jpg" },
-                  { title: "Indiana Jones and the Dial of Destiny", overview: "Finding himself in a new era, approaching retirement, Indy wrestles with fitting into a world.", poster: "https://image.tmdb.org/t/p/w92/Af4bXE63pVsb2FtbW8uYIyPBadD.jpg" }
-                ]
-              },
-              {
-                title: "Romance Evening",
-                description: "Heartwarming love stories and romantic comedies",
-                movieCount: "10 movies",
-                genre: "Romance, Comedy, Drama",
-                movies: [
-                  { title: "Anyone But You", overview: "After an amazing first date, Bea and Ben's fiery attraction turns ice cold.", poster: "https://image.tmdb.org/t/p/w92/5qHNjhtjMD4YWH3UP0rm4tKwMaj.jpg" },
-                  { title: "The Idea of You", overview: "A 40-year-old single mother begins an unexpected romance with a 24-year-old pop star.", poster: "https://image.tmdb.org/t/p/w92/zDi2U7WYkdIoGYHcYbM9X5yReVD.jpg" },
-                  { title: "Purple Hearts", overview: "An aspiring musician agrees to a marriage of convenience with a soon-to-deploy Marine.", poster: "https://image.tmdb.org/t/p/w92/4JyNWkryifWbWXJyxcWh3pVya6N.jpg" },
-                  { title: "Red, White & Royal Blue", overview: "After an altercation between Alex and Britain's Prince Henry at a royal event becomes tabloid fodder.", poster: "https://image.tmdb.org/t/p/w92/p1dTdMPSPzKVANutGFjONKrZwzN.jpg" }
-                ]
-              },
-              {
-                title: "Horror Marathon",
-                description: "Spine-chilling horror films for the brave",
-                movieCount: "6 movies",
-                genre: "Horror, Thriller, Mystery",
-                movies: [
-                  { title: "Scream VI", overview: "Following the latest Ghostface killings, the four survivors leave Woodsboro behind.", poster: "https://image.tmdb.org/t/p/w92/wDWwtvkRRlgTiUr6TyLSMX8FCuZ.jpg" },
-                  { title: "Evil Dead Rise", overview: "A twisted tale of two estranged sisters whose reunion is cut short by flesh-possessing demons.", poster: "https://image.tmdb.org/t/p/w92/5ik4ATKmNtmJU6AYD0bLm56BCVM.jpg" },
-                  { title: "M3GAN", overview: "A brilliant toy company roboticist uses artificial intelligence to develop M3GAN.", poster: "https://image.tmdb.org/t/p/w92/d9nBoowhjiiYc4FBNtQkPY7c11H.jpg" },
-                  { title: "The Nun II", overview: "In 1956 France, a priest is violently murdered, and Sister Irene begins to investigate.", poster: "https://image.tmdb.org/t/p/w92/5gzzkR7y3hnY8AD1wXjCnVlHba5.jpg" }
-                ]
-              },
-              {
-                title: "Laugh Therapy",
-                description: "Comedy classics guaranteed to make you laugh",
-                movieCount: "15 movies",
-                genre: "Comedy, Satire, Feel-good",
-                movies: [
-                  { title: "Barbie", overview: "Barbie and Ken are having the time of their lives in the colorful world of Barbie Land.", poster: "https://image.tmdb.org/t/p/w92/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg" },
-                  { title: "Cocaine Bear", overview: "An oddball group converges in a Georgia forest where a 500-pound black bear goes on a rampage.", poster: "https://image.tmdb.org/t/p/w92/gOnmaxHo0412UVr1QM5Nekv1xPi.jpg" },
-                  { title: "Air", overview: "The story of how a basketball shoe launched a global empire, following Nike's pursuit of Michael Jordan.", poster: "https://image.tmdb.org/t/p/w92/76AKTmKxXdUeQ4DCNwJRwHxtPqC.jpg" },
-                  { title: "Dungeons & Dragons: Honor Among Thieves", overview: "A charming thief and a band of unlikely adventurers undertake an epic heist.", poster: "https://image.tmdb.org/t/p/w92/A7AoNT06aRAc4SV89d90aToAqYK.jpg" }
-                ]
-              }
-            ].map((playlist, index) => (
+            {moodPlaylists.map((playlist, index) => (
               <div
                 key={index}
                 className="flex-shrink-0 w-80 bg-neutral-800 rounded-lg overflow-hidden cursor-pointer hover:bg-neutral-700 transition-colors"
@@ -546,7 +495,7 @@ Make it fun, creative, and personalized to their selections. The nickname should
                       <div key={`${playlist.title}-${movieIndex}`} className="flex items-start space-x-3">
                         <div className="flex-shrink-0 w-12 h-16 bg-neutral-700 rounded overflow-hidden">
                           <img
-                            src={movie.poster}
+                            src={movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w92${movie.poster_path}`}
                             alt={movie.title}
                             className="w-full h-full object-cover"
                           />
