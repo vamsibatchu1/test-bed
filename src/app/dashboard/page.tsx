@@ -49,6 +49,7 @@ export default function DashboardPage() {
   const [personalityProfile, setPersonalityProfile] = useState<PersonalityProfile | null>(null);
   const [recentMovies, setRecentMovies] = useState<MovieRecommendation[]>([]);
   const [moodPlaylists, setMoodPlaylists] = useState<MoodPlaylist[]>([]);
+  const [moodPlaylistsLoaded, setMoodPlaylistsLoaded] = useState(false);
 
   useEffect(() => {
     // Initialize dashboard movie service
@@ -63,8 +64,17 @@ export default function DashboardPage() {
     // Load initial data
     loadDashboardData();
     
-    // Load mood playlists with guaranteed posters
-    setMoodPlaylists(genreMovieCollections.getAllMoodPlaylists());
+    // Load mood playlists with real API data - client side only
+    const loadMoodPlaylists = async () => {
+      try {
+        const playlists = await genreMovieCollections.getAllMoodPlaylists();
+        setMoodPlaylists(playlists);
+        setMoodPlaylistsLoaded(true);
+      } catch (error) {
+        console.error('Error loading mood playlists:', error);
+      }
+    };
+    loadMoodPlaylists();
     
     // Cleanup subscription on unmount
     return () => {
@@ -85,9 +95,14 @@ export default function DashboardPage() {
     }
   };
 
-  const refreshMoodPlaylists = () => {
+  const refreshMoodPlaylists = async () => {
     // Refresh all playlists with new random movies
-    setMoodPlaylists(genreMovieCollections.getAllMoodPlaylists());
+    try {
+      const playlists = await genreMovieCollections.getAllMoodPlaylists();
+      setMoodPlaylists(playlists);
+    } catch (error) {
+      console.error('Error refreshing mood playlists:', error);
+    }
   };
 
   const loadRecentMovies = async () => {
@@ -102,12 +117,17 @@ export default function DashboardPage() {
     }
   };
 
-  const getGreeting = () => {
+  const [greeting, setGreeting] = useState("Good morning");
+
+  // Set greeting on client side only to avoid hydration mismatch
+  useEffect(() => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
-  };
+    if (hour < 12) setGreeting("Good morning");
+    else if (hour < 18) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
+  }, []);
+
+  const getGreeting = () => greeting;
 
   const getSubGreeting = () => {
     if (personalityProfile) {
@@ -471,7 +491,29 @@ Make it fun, creative, and personalized to their selections. The nickname should
             <h2 className="text-2xl font-bold text-white">Done Your Mode</h2>
           </div>
           <div className="flex gap-4 overflow-x-auto scrollbar-hide">
-            {moodPlaylists.map((playlist, index) => (
+            {!moodPlaylistsLoaded ? (
+              // Loading skeleton
+              Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="flex-shrink-0 w-80 bg-neutral-800 rounded-lg overflow-hidden">
+                  <div className="p-4">
+                    <div className="h-6 bg-neutral-700 rounded mb-2"></div>
+                    <div className="h-4 bg-neutral-700 rounded mb-3"></div>
+                    <div className="space-y-3">
+                      {Array.from({ length: 3 }).map((_, movieIndex) => (
+                        <div key={movieIndex} className="flex items-start space-x-3">
+                          <div className="flex-shrink-0 w-12 h-16 bg-neutral-700 rounded"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-neutral-700 rounded mb-1"></div>
+                            <div className="h-3 bg-neutral-700 rounded"></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              moodPlaylists.map((playlist, index) => (
               <div
                 key={index}
                 className="flex-shrink-0 w-80 bg-neutral-800 rounded-lg overflow-hidden cursor-pointer hover:bg-neutral-700 transition-colors"
@@ -529,7 +571,8 @@ Make it fun, creative, and personalized to their selections. The nickname should
                   </p>
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
         </div>
 
