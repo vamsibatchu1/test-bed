@@ -6,6 +6,8 @@ import { RecentTopReleases } from "@/components/dashboard/recent-top-releases";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   Search, 
   User, 
@@ -14,7 +16,10 @@ import {
   Film,
   Heart,
   Zap,
-  Sparkles
+  Sparkles,
+  Mic,
+  Send,
+  X
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
@@ -37,6 +42,13 @@ interface PersonalityProfile {
   movie_style: string;
 }
 
+// Extended MovieRecommendation interface for AI search results
+interface ExtendedMovieRecommendation extends MovieRecommendation {
+  reason?: string;
+  genre?: string;
+  year?: string;
+}
+
 // Using MovieRecommendation interface from the service
 
 export default function DashboardPage() {
@@ -50,6 +62,12 @@ export default function DashboardPage() {
   const [recentMovies, setRecentMovies] = useState<MovieRecommendation[]>([]);
   const [moodPlaylists, setMoodPlaylists] = useState<MoodPlaylist[]>([]);
   const [moodPlaylistsLoaded, setMoodPlaylistsLoaded] = useState(false);
+  
+  // Ask for Movies section state
+  const [showMovieBottomSheet, setShowMovieBottomSheet] = useState(false);
+  const [movieQuery, setMovieQuery] = useState("");
+  const [isSearchingMovies, setIsSearchingMovies] = useState(false);
+  const [movieSearchResults, setMovieSearchResults] = useState<ExtendedMovieRecommendation[]>([]);
 
   useEffect(() => {
     // Initialize dashboard movie service
@@ -323,7 +341,7 @@ Make it fun, creative, and personalized to their selections. The nickname should
       description: "Create your personalized movie profile and get better recommendations.",
       icon: User,
       buttonText: "Build Profile",
-      onClick: () => router.push('/dashboard/settings')
+      onClick: () => router.push('/dashboard/profile')
     },
     {
       title: "Search for Movies",
@@ -337,9 +355,131 @@ Make it fun, creative, and personalized to their selections. The nickname should
       description: "Organize your movies into custom folders and collections.",
       icon: FolderPlus,
       buttonText: "Create Library",
-      onClick: () => router.push('/dashboard/reports')
+      onClick: () => router.push('/dashboard/library')
     }
   ];
+
+  // Suggestion cards for Ask for Movies section
+  const movieSuggestionCards = [
+    "90s Bollywood hits",
+    "French New Wave classics",
+    "Mind-bending sci-fi",
+    "Cozy autumn movies",
+    "Korean thrillers",
+    "80s horror gems",
+    "Feel-good comedies",
+    "Epic fantasy adventures"
+  ];
+
+  // Function to search for movies using AI
+  const searchMoviesWithAI = async (query: string) => {
+    setIsSearchingMovies(true);
+    try {
+      const prompt = `Based on this movie request: "${query}"
+
+Please recommend exactly 8 movies that match this request. For each movie, provide:
+- Exact title (must match TMDB exactly)
+- Year
+- Brief reason why it fits the request (1-2 sentences)
+- Primary genre
+
+Format as JSON array:
+[
+  {
+    "title": "Movie Title",
+    "year": "2020",
+    "reason": "Brief explanation why this fits the request",
+    "genre": "Primary genre"
+  }
+]
+
+Focus on popular, well-known movies that are likely to be in movie databases. Prioritize quality and relevance to the request.`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a movie recommendation expert. Provide accurate, relevant movie suggestions based on user requests.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI recommendations');
+      }
+
+      const data = await response.json();
+      const aiRecommendations = JSON.parse(data.choices[0].message.content);
+
+      // Enrich AI recommendations with TMDB data
+      const enrichedMovies: ExtendedMovieRecommendation[] = [];
+      
+      for (const rec of aiRecommendations) {
+        try {
+          // Search TMDB for the movie
+          const tmdbResponse = await fetch(
+            `https://api.themoviedb.org/3/search/movie?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&query=${encodeURIComponent(rec.title)}&year=${rec.year}`
+          );
+          const tmdbData = await tmdbResponse.json();
+          
+          if (tmdbData.results && tmdbData.results.length > 0) {
+            const movie = tmdbData.results[0];
+            enrichedMovies.push({
+              id: movie.id,
+              title: movie.title,
+              overview: movie.overview,
+              poster_path: movie.poster_path,
+              release_date: movie.release_date,
+              vote_average: movie.vote_average,
+              vote_count: movie.vote_count,
+              reason: rec.reason,
+              genre: rec.genre,
+              year: rec.year
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching TMDB data for ${rec.title}:`, error);
+        }
+      }
+      
+      setMovieSearchResults(enrichedMovies);
+    } catch (error) {
+      console.error('Error searching movies with AI:', error);
+      setMovieSearchResults([]);
+    } finally {
+      setIsSearchingMovies(false);
+    }
+  };
+
+  // Handle suggestion card click
+  const handleSuggestionClick = (suggestion: string) => {
+    setMovieQuery(`Show me ${suggestion.toLowerCase()}`);
+    setShowMovieBottomSheet(true);
+    searchMoviesWithAI(`Show me ${suggestion.toLowerCase()}`);
+  };
+
+  // Handle search submission
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (movieQuery.trim()) {
+      setShowMovieBottomSheet(true);
+      searchMoviesWithAI(movieQuery.trim());
+    }
+  };
 
   if (loading) {
     return (
@@ -576,7 +716,66 @@ Make it fun, creative, and personalized to their selections. The nickname should
           </div>
         </div>
 
-                {/* Quick Genres */}
+                {/* Ask for Movies */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">Ask for Movies</h2>
+          </div>
+          
+          {/* Suggestion Cards Carousel */}
+          <div className="flex gap-3 overflow-x-auto scrollbar-hide mb-4">
+            {movieSuggestionCards.map((suggestion, index) => (
+              <div
+                key={index}
+                className="flex-shrink-0 px-6 py-4 rounded-2xl cursor-pointer transition-all"
+                style={{
+                  background: 'linear-gradient(135deg, #6B46C1 0%, #9333EA 50%, #EC4899 100%)',
+                  minWidth: '160px'
+                }}
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                <div className="flex items-center">
+                  <Sparkles className="h-4 w-4 text-white mr-2" />
+                  <span className="text-white font-medium text-sm whitespace-nowrap">
+                    {suggestion}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Search Bar */}
+          <form onSubmit={handleSearchSubmit} className="relative">
+            <Input
+              type="text"
+              placeholder="Ask any way you like"
+              value={movieQuery}
+              onChange={(e) => setMovieQuery(e.target.value)}
+              className="w-full bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-400 pr-12 py-6 rounded-full text-center focus:border-neutral-600"
+            />
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-neutral-400 hover:text-white"
+              >
+                <Mic className="h-4 w-4" />
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-neutral-400 hover:text-white"
+                disabled={!movieQuery.trim()}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </form>
+        </div>
+
+        {/* Quick Genres */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">Quick Genres</h2>
@@ -642,6 +841,112 @@ Make it fun, creative, and personalized to their selections. The nickname should
           </div>
         </div>
 
+        {/* Movie Recommendations Bottom Sheet */}
+        <Sheet open={showMovieBottomSheet} onOpenChange={(open) => {
+          setShowMovieBottomSheet(open);
+          if (!open) {
+            setMovieQuery("");
+            setMovieSearchResults([]);
+          }
+        }}>
+          <SheetContent 
+            side="bottom" 
+            className="h-[80vh] bg-neutral-950 border-neutral-800 rounded-t-[32px] [&>button]:h-6 [&>button]:w-6 [&>button]:top-4 [&>button]:right-4 [&>button]:text-neutral-400 [&>button]:hover:text-white [&>button]:bg-transparent [&>button]:border-none [&>button]:focus:bg-transparent [&>button]:focus:ring-0 [&_.fixed]:bg-black/60"
+          >
+            <SheetHeader className="pb-4 border-b border-neutral-800">
+              <div className="flex items-center justify-between">
+                <SheetTitle className="text-white text-lg">
+                  Ask for Movies
+                </SheetTitle>
+              </div>
+            </SheetHeader>
+            
+            <div className="mt-4 pb-6 overflow-y-auto max-h-[calc(80vh-120px)] px-4">
+              {movieQuery && (
+                <div className="mb-4">
+                  <p className="text-neutral-400 text-sm">
+                    Results for &ldquo;{movieQuery}&rdquo;
+                  </p>
+                </div>
+              )}
+              {isSearchingMovies ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                  <p className="text-neutral-400">Finding perfect movies for you...</p>
+                </div>
+              ) : movieSearchResults.length > 0 ? (
+                <div className="space-y-4">
+                  {movieSearchResults.map((movie) => (
+                    <div key={movie.id} className="flex space-x-4 p-4 bg-neutral-900 rounded-lg hover:bg-neutral-800 transition-colors">
+                      <div className="flex-shrink-0 w-16 h-24 bg-neutral-800 rounded overflow-hidden">
+                        {movie.poster_path ? (
+                          <img
+                            src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                            alt={movie.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Film className="h-6 w-6 text-neutral-600" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-white font-semibold text-base mb-1 truncate">
+                          {movie.title}
+                        </h3>
+                        
+                        <div className="flex items-center gap-3 mb-2">
+                          {movie.year && (
+                            <span className="text-neutral-400 text-sm">{movie.year}</span>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3 w-3 text-yellow-500" />
+                            <span className="text-neutral-400 text-sm">
+                              {movie.vote_average?.toFixed(1) || 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {movie.genre && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {movie.genre.split(',').map((genre, index) => (
+                              <Badge 
+                                key={index} 
+                                variant="outline" 
+                                className="text-xs border-neutral-600 text-neutral-300 px-2 py-0.5"
+                              >
+                                {genre.trim()}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {movie.reason && (
+                          <p className="text-neutral-300 text-sm mb-2 leading-relaxed">
+                            {movie.reason}
+                          </p>
+                        )}
+                        
+                        <p className="text-neutral-400 text-xs leading-relaxed line-clamp-2">
+                          {movie.overview}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                  <Film className="h-12 w-12 text-neutral-600" />
+                  <p className="text-neutral-400 text-center">
+                    No movies found. Try a different search query.
+                  </p>
+                </div>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
 
       </div>
     </DashboardLayout>

@@ -21,12 +21,12 @@ const navigationItems = [
   },
   {
     name: "My Saved",
-    href: "/dashboard/reports",
+    href: "/dashboard/library",
     icon: FolderOpen
   },
   {
     name: "Profile",
-    href: "/dashboard/settings",
+    href: "/dashboard/profile",
     icon: User
   }
 ];
@@ -36,8 +36,8 @@ export function MobileNavigation() {
   const pathname = usePathname();
 
   return (
-    <div className="sticky bottom-0 left-0 right-0 z-50 bg-neutral-900 border-t border-neutral-700">
-      <div className="flex justify-around items-center h-16 max-w-[480px] mx-auto">
+    <div className="sticky bottom-0 left-0 right-0 z-50 bg-neutral-900 border-t border-neutral-700 flex justify-center">
+      <div className="flex justify-around items-center h-16 max-w-[480px] w-full">
         {navigationItems.map((item) => {
           const isActive = pathname === item.href;
           return (

@@ -36,8 +36,8 @@ import { useAuth } from "@/contexts/auth-context"
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Flick Search", href: "/dashboard/flick-search", icon: Film },
-  { name: "My Saved Flicks", href: "/dashboard/reports", icon: Bookmark },
-  { name: "Profile", href: "/dashboard/settings", icon: User },
+  { name: "My Saved Flicks", href: "/dashboard/library", icon: Bookmark },
+  { name: "Profile", href: "/dashboard/profile", icon: User },
 ]
 
 export function Sidebar() {
@@ -136,7 +136,7 @@ function SidebarContent() {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings">
+              <Link href="/dashboard/profile">
                 <User className="mr-2 h-4 w-4" />
                 Profile
               </Link>
