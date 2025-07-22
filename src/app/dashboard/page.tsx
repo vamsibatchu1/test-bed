@@ -68,6 +68,7 @@ export default function DashboardPage() {
   const [movieQuery, setMovieQuery] = useState("");
   const [isSearchingMovies, setIsSearchingMovies] = useState(false);
   const [movieSearchResults, setMovieSearchResults] = useState<ExtendedMovieRecommendation[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   useEffect(() => {
     // Initialize dashboard movie service
@@ -374,7 +375,23 @@ Make it fun, creative, and personalized to their selections. The nickname should
   // Function to search for movies using AI
   const searchMoviesWithAI = async (query: string) => {
     setIsSearchingMovies(true);
+    setSearchError(null);
     try {
+      // Debug: Check if API keys are available
+      if (!process.env.NEXT_PUBLIC_OPENAI_API_KEY) {
+        console.error('OpenAI API key is missing');
+        throw new Error('OpenAI API key is not configured');
+      }
+      
+      if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
+        console.error('TMDB API key is missing');
+        throw new Error('TMDB API key is not configured');
+      }
+
+      console.log('Starting AI movie search for:', query);
+      console.log('OpenAI API key available:', !!process.env.NEXT_PUBLIC_OPENAI_API_KEY);
+      console.log('TMDB API key available:', !!process.env.NEXT_PUBLIC_TMDB_API_KEY);
+
       const prompt = `Based on this movie request: "${query}"
 
 Please recommend exactly 8 movies that match this request. For each movie, provide:
@@ -395,6 +412,7 @@ Format as JSON array:
 
 Focus on popular, well-known movies that are likely to be in movie databases. Prioritize quality and relevance to the request.`;
 
+      console.log('Making OpenAI API request...');
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -418,23 +436,46 @@ Focus on popular, well-known movies that are likely to be in movie databases. Pr
         })
       });
 
+      console.log('OpenAI response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to get AI recommendations');
+        const errorText = await response.text();
+        console.error('OpenAI API error:', response.status, errorText);
+        throw new Error(`OpenAI API failed: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('OpenAI response received:', data);
+      
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        console.error('Invalid OpenAI response structure:', data);
+        throw new Error('Invalid response from OpenAI API');
+      }
+      
       const aiRecommendations = JSON.parse(data.choices[0].message.content);
+      console.log('AI recommendations parsed:', aiRecommendations);
 
       // Enrich AI recommendations with TMDB data
       const enrichedMovies: ExtendedMovieRecommendation[] = [];
       
+      console.log('Starting TMDB enrichment for', aiRecommendations.length, 'movies');
+      
       for (const rec of aiRecommendations) {
         try {
+          console.log('Searching TMDB for:', rec.title, rec.year);
+          
           // Search TMDB for the movie
           const tmdbResponse = await fetch(
             `https://api.themoviedb.org/3/search/movie?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&query=${encodeURIComponent(rec.title)}&year=${rec.year}`
           );
+          
+          if (!tmdbResponse.ok) {
+            console.error(`TMDB API error for ${rec.title}:`, tmdbResponse.status);
+            continue;
+          }
+          
           const tmdbData = await tmdbResponse.json();
+          console.log(`TMDB results for ${rec.title}:`, tmdbData.results?.length || 0);
           
           if (tmdbData.results && tmdbData.results.length > 0) {
             const movie = tmdbData.results[0];
@@ -450,15 +491,22 @@ Focus on popular, well-known movies that are likely to be in movie databases. Pr
               genre: rec.genre,
               year: rec.year
             });
+            console.log('Successfully enriched:', movie.title);
+          } else {
+            console.log('No TMDB results found for:', rec.title);
           }
         } catch (error) {
           console.error(`Error fetching TMDB data for ${rec.title}:`, error);
         }
       }
       
+      console.log('Final enriched movies count:', enrichedMovies.length);
+      
       setMovieSearchResults(enrichedMovies);
     } catch (error) {
       console.error('Error searching movies with AI:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setSearchError(errorMessage);
       setMovieSearchResults([]);
     } finally {
       setIsSearchingMovies(false);
@@ -873,6 +921,25 @@ Focus on popular, well-known movies that are likely to be in movie databases. Pr
                 <div className="flex flex-col items-center justify-center py-12 space-y-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
                   <p className="text-neutral-400">Finding perfect movies for you...</p>
+                </div>
+              ) : searchError ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                  <div className="text-red-400 text-center">
+                    <p className="font-medium mb-2">Error loading recommendations</p>
+                    <p className="text-sm text-neutral-400">{searchError}</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setSearchError(null);
+                      if (movieQuery) {
+                        searchMoviesWithAI(movieQuery);
+                      }
+                    }}
+                    className="mt-4"
+                  >
+                    Try Again
+                  </Button>
                 </div>
               ) : movieSearchResults.length > 0 ? (
                 <div className="space-y-4">
