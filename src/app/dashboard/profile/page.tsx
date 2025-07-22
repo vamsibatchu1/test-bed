@@ -1,3 +1,5 @@
+"use client";
+
 import { DashboardLayout } from "@/components/dashboard/layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -5,9 +7,26 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Save, User, Camera } from "lucide-react"
+import { Save, User, Camera, Lock } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function ProfilePage() {
+  const { user } = useAuth();
+
+  // Show login message if user is not authenticated
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <div className="p-4 bg-neutral-950 min-h-screen overflow-y-auto scrollbar-hide">
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+            <Lock className="w-16 h-16 text-neutral-400 mb-4" />
+            <h2 className="text-xl font-semibold text-white mb-2">Login Required</h2>
+            <p className="text-neutral-400">Login to access your profile</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
   return (
     <DashboardLayout>
       <div className="p-4 bg-neutral-950 min-h-screen overflow-y-auto scrollbar-hide">

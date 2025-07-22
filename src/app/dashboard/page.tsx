@@ -66,6 +66,7 @@ export default function DashboardPage() {
   // Ask for Movies section state
   const [showMovieBottomSheet, setShowMovieBottomSheet] = useState(false);
   const [movieQuery, setMovieQuery] = useState("");
+  const [lastSearchedQuery, setLastSearchedQuery] = useState("");
   const [isSearchingMovies, setIsSearchingMovies] = useState(false);
   const [movieSearchResults, setMovieSearchResults] = useState<ExtendedMovieRecommendation[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -376,6 +377,8 @@ Make it fun, creative, and personalized to their selections. The nickname should
   const searchMoviesWithAI = async (query: string) => {
     setIsSearchingMovies(true);
     setSearchError(null);
+    setMovieSearchResults([]); // Clear previous results immediately
+    setLastSearchedQuery(query); // Store the query being searched
     try {
       // Debug: Check if API keys are available
       if (!process.env.NEXT_PUBLIC_OPENAI_API_KEY) {
@@ -635,38 +638,80 @@ Focus on popular, well-known movies that are likely to be in movie databases. Pr
       <div className="p-4 bg-neutral-950 min-h-screen overflow-y-auto scrollbar-hide">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white">{getGreeting()}, {user?.email?.split('@')[0] || 'Movie Lover'}!</h1>
+          <h1 className="text-2xl font-bold text-white">
+            {user ? `${getGreeting()}, ${user.email?.split('@')[0] || 'Movie Lover'}!` : 'Welcome to Good Flicks'}
+          </h1>
           <p className="text-neutral-400 mt-1">{getSubGreeting()}</p>
         </div>
 
-                {/* Getting Started Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">Getting Started</h2>
-                    </div>
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide">
-            {actionCards.map((card, index) => (
-              <div 
-                key={index}
-                className="flex flex-col items-start justify-start p-4 rounded-lg cursor-pointer transition-all flex-shrink-0 bg-neutral-800 hover:bg-neutral-700"
-                style={{ width: '200px' }}
-                onClick={card.onClick}
-              >
-                <div className="mb-3">
-                  <card.icon className="h-5 w-5 text-white" />
+        {/* Login/Signup Card for Non-Authenticated Users */}
+        {!user && (
+          <div className="mb-8">
+            <Card className="bg-gradient-to-br from-neutral-800 to-neutral-900 border-neutral-700">
+              <CardContent className="px-6 py-3">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-neutral-700 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <Sparkles className="h-8 w-8 text-white" />
                   </div>
-                <div className="text-left">
-                  <h4 className="font-medium text-sm mb-1 text-white">
-                    {card.title}
-                  </h4>
-                  <p className="text-xs text-gray-300">
-                    {card.description}
-                  </p>
+                  <h3 className="text-xl font-semibold text-white mb-4">
+                    Unlock Your Movie Journey
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-center gap-2 text-sm text-neutral-400">
+                      <Star className="h-4 w-4 text-yellow-500" />
+                      <span>AI-powered movie recommendations</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 text-sm text-neutral-400">
+                      <Heart className="h-4 w-4 text-red-500" />
+                      <span>Save and organize your favorite movies</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 text-sm text-neutral-400">
+                      <Zap className="h-4 w-4 text-blue-500" />
+                      <span>Discover hidden gems and classics</span>
+                    </div>
+                  </div>
+                  <Button 
+                    className="mt-6 bg-white hover:bg-gray-100 text-black font-medium px-8 py-3 rounded-full"
+                    onClick={() => router.push('/auth')}
+                  >
+                    Login / Sign Up
+                  </Button>
                 </div>
-              </div>
-            ))}
+              </CardContent>
+            </Card>
           </div>
-        </div>
+        )}
+
+        {/* Getting Started Section - Only for Authenticated Users */}
+        {user && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white">Getting Started</h2>
+            </div>
+            <div className="flex gap-4 overflow-x-auto scrollbar-hide">
+              {actionCards.map((card, index) => (
+                <div 
+                  key={index}
+                  className="flex flex-col items-start justify-start p-4 rounded-lg cursor-pointer transition-all flex-shrink-0 bg-neutral-800 hover:bg-neutral-700"
+                  style={{ width: '200px' }}
+                  onClick={card.onClick}
+                >
+                  <div className="mb-3">
+                    <card.icon className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="font-medium text-sm mb-1 text-white">
+                      {card.title}
+                    </h4>
+                    <p className="text-xs text-gray-300">
+                      {card.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Recent Top Releases */}
         <div className="mb-8">
@@ -894,35 +939,90 @@ Focus on popular, well-known movies that are likely to be in movie databases. Pr
           setShowMovieBottomSheet(open);
           if (!open) {
             setMovieQuery("");
+            setLastSearchedQuery("");
             setMovieSearchResults([]);
+            setSearchError(null);
           }
         }}>
           <SheetContent 
             side="bottom" 
-            className="h-[80vh] bg-neutral-950 border-neutral-800 rounded-t-[32px] [&>button]:h-6 [&>button]:w-6 [&>button]:top-4 [&>button]:right-4 [&>button]:text-neutral-400 [&>button]:hover:text-white [&>button]:bg-transparent [&>button]:border-none [&>button]:focus:bg-transparent [&>button]:focus:ring-0 [&_.fixed]:bg-black/60"
+            className="h-[80vh] bg-neutral-950 border-neutral-800 rounded-t-[24px] [&_.fixed]:bg-black/60 [&>button]:hidden"
           >
-            <SheetHeader className="pb-4 border-b border-neutral-800">
+            {/* Header and Search Bar Container */}
+            <div className="mx-6 py-4 space-y-3">
+              {/* Header with Title and Close Button */}
               <div className="flex items-center justify-between">
-                <SheetTitle className="text-white text-lg">
+                <h2 className="text-white text-lg font-semibold">
                   Ask for Movies
-                </SheetTitle>
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowMovieBottomSheet(false)}
+                  className="h-8 w-8 p-0 text-neutral-400 hover:text-white bg-transparent border-none focus:bg-transparent focus:ring-0"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
               </div>
-            </SheetHeader>
+              
+              {/* Search Bar */}
+              <div>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (movieQuery.trim()) {
+                  searchMoviesWithAI(movieQuery);
+                }
+              }} className="relative">
+                <Input
+                  type="text"
+                  placeholder="Refine your search..."
+                  value={movieQuery}
+                  onChange={(e) => setMovieQuery(e.target.value)}
+                  className="w-full bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-400 pr-12 py-6 rounded-xl focus:border-neutral-600"
+                />
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Button
+                    type="submit"
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-neutral-400 hover:text-white"
+                    disabled={!movieQuery.trim()}
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </form>
+              </div>
+            </div>
             
-            <div className="mt-4 pb-6 overflow-y-auto max-h-[calc(80vh-120px)] px-4">
-              {movieQuery && (
+            <div className="overflow-y-auto flex-1 px-6">
+              {lastSearchedQuery && (
                 <div className="mb-4">
-                  <p className="text-neutral-400 text-sm">
-                    Results for &ldquo;{movieQuery}&rdquo;
-                  </p>
+                  <div className="text-neutral-400 text-sm">
+                    {isSearchingMovies ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-neutral-400"></div>
+                        {(() => {
+                          const loadingTexts = [
+                            "Finding the best movies for you...",
+                            "Grabbing some popcorn...",
+                            "Scanning movie databases...",
+                            "Consulting the film critics...",
+                            "Dusting off classic reels...",
+                            "Mixing the perfect movie cocktail...",
+                            "Searching through cinema history...",
+                            "Curating your perfect watchlist..."
+                          ];
+                          return loadingTexts[Math.floor(Math.random() * loadingTexts.length)];
+                        })()}
+                      </div>
+                    ) : (
+                      `Results for "${lastSearchedQuery}"`
+                    )}
+                  </div>
                 </div>
               )}
-              {isSearchingMovies ? (
-                <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                  <p className="text-neutral-400">Finding perfect movies for you...</p>
-                </div>
-              ) : searchError ? (
+              {searchError ? (
                 <div className="flex flex-col items-center justify-center py-12 space-y-4">
                   <div className="text-red-400 text-center">
                     <p className="font-medium mb-2">Error loading recommendations</p>
@@ -940,6 +1040,34 @@ Focus on popular, well-known movies that are likely to be in movie databases. Pr
                   >
                     Try Again
                   </Button>
+                </div>
+              ) : isSearchingMovies ? (
+                <div className="space-y-4">
+                  {/* Skeleton Loaders */}
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="flex space-x-4 p-4 bg-neutral-900 rounded-lg animate-pulse">
+                      <div className="flex-shrink-0 w-16 h-24 bg-neutral-700 rounded"></div>
+                      <div className="flex-1 min-w-0">
+                        <div className="h-5 bg-neutral-700 rounded mb-2 w-3/4"></div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="h-4 bg-neutral-700 rounded w-12"></div>
+                          <div className="h-4 bg-neutral-700 rounded w-16"></div>
+                        </div>
+                        <div className="flex gap-1 mb-2">
+                          <div className="h-6 bg-neutral-700 rounded w-16"></div>
+                          <div className="h-6 bg-neutral-700 rounded w-20"></div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="h-4 bg-neutral-700 rounded w-full"></div>
+                          <div className="h-4 bg-neutral-700 rounded w-5/6"></div>
+                        </div>
+                        <div className="space-y-1 mt-2">
+                          <div className="h-3 bg-neutral-700 rounded w-full"></div>
+                          <div className="h-3 bg-neutral-700 rounded w-4/5"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : movieSearchResults.length > 0 ? (
                 <div className="space-y-4">
